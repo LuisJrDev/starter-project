@@ -124,13 +124,14 @@ measures below.
    and can only be deleted while orphaned. 66 unit tests cover them and run in CI on every push.
    They were also verified in production with forbidden requests (edit, delete, overwrite, list
    without a limit), which all returned `403`.
-2. **Restrict the API keys (required on the Blaze plan).** In
-   [Google Cloud → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials),
-   limit both keys created by Firebase (*Android key* and *Browser key*) to the APIs the project
-   uses: *Cloud Firestore API*, *Cloud Storage for Firebase API* and *Firebase Installations API*.
-   A pay-as-you-go project with an unrestricted key could otherwise be billed for other Google APIs
-   called with it. Do not add an Android app (SHA-1) restriction: every developer or reviewer
-   building a debug APK signs it with a different certificate.
+2. **The API keys are restricted to Firebase APIs.** On a pay-as-you-go (Blaze) project an
+   unrestricted key could be billed for other Google APIs called with it. The *Android key* and
+   *Browser key* that Firebase creates are restricted by default to the Firebase APIs (25 APIs in
+   this project, checked in
+   [Google Cloud → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)).
+   Keep that restriction when creating a new project. There is no Android app (SHA-1) restriction
+   on purpose: every developer or reviewer building a debug APK signs it with a different
+   certificate.
 3. **Budget alert** on the billing account. It only notifies, it does not cap spending.
 4. **Tests never touch production.** The integration test refuses to run without the emulator
    flag, and the seed script targets the emulator unless `--target=production` is given.
