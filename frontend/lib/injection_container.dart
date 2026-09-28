@@ -14,7 +14,12 @@ import 'features/daily_news/domain/usecases/get_saved_article.dart';
 import 'features/daily_news/domain/usecases/remove_article.dart';
 import 'features/daily_news/domain/usecases/save_article.dart';
 import 'features/daily_news/presentation/bloc/article/local/local_article_bloc.dart';
+import 'features/journalist_articles/data/data_sources/local/gallery_image_data_source.dart';
+import 'features/journalist_articles/data/repository/thumbnail_picker_repository_impl.dart';
+import 'features/journalist_articles/domain/repository/thumbnail_picker_repository.dart';
 import 'features/journalist_articles/domain/usecases/get_published_articles.dart';
+import 'features/journalist_articles/domain/usecases/pick_thumbnail_from_gallery.dart';
+import 'package:image_picker/image_picker.dart';
 import 'features/journalist_articles/domain/usecases/mock/mock_published_articles_store.dart';
 import 'features/journalist_articles/domain/usecases/publish_article.dart';
 
@@ -64,6 +69,10 @@ Future<void> initializeDependencies() async {
   sl.registerSingleton<MockPublishedArticlesStore>(MockPublishedArticlesStore());
   sl.registerSingleton<PublishArticleUseCase>(PublishArticleUseCase(sl()));
   sl.registerSingleton<GetPublishedArticlesUseCase>(GetPublishedArticlesUseCase(sl()));
+
+  sl.registerSingleton<GalleryImageDataSource>(GalleryImageDataSource(ImagePicker()));
+  sl.registerSingleton<ThumbnailPickerRepository>(ThumbnailPickerRepositoryImpl(sl()));
+  sl.registerSingleton<PickThumbnailFromGalleryUseCase>(PickThumbnailFromGalleryUseCase(sl()));
 
 
   //Blocs
