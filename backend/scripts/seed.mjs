@@ -92,15 +92,26 @@ async function readSeedArticles() {
   return JSON.parse(json);
 }
 
-// Mirrors the derivation rule of the domain entity in the Flutter app:
-// strip Markdown syntax, collapse whitespace, keep the first 300 characters.
+// Keep in sync with ArticleDraftEntity.description in the Flutter app
+// (frontend/lib/features/journalist_articles/domain/entities/article_draft.dart):
+// strip Markdown syntax, collapse whitespace, keep the first 300 UTF-16 code units
+// without splitting an emoji in half.
 function deriveDescription(markdown) {
   const plainText = markdown
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/^\s{0,3}(#{1,6}|>|[-*+]|\d+\.)\s+/gm, '')
     .replace(/(\*\*|__|\*|_|~~|`)/g, '')
     .replace(/\s+/g, ' ')
     .trim();
-  return plainText.slice(0, DESCRIPTION_MAX_LENGTH);
+  return truncateWithoutSplittingCharacters(plainText, DESCRIPTION_MAX_LENGTH);
+}
+
+function truncateWithoutSplittingCharacters(text, maxLength) {
+  if (text.length <= maxLength) return text;
+  const lastCodeUnit = text.charCodeAt(maxLength - 1);
+  const endsInsideSurrogatePair = lastCodeUnit >= 0xd800 && lastCodeUnit <= 0xdbff;
+  return text.slice(0, endsInsideSurrogatePair ? maxLength - 1 : maxLength);
 }
 
 async function uploadThumbnail(storage, articleId, imageFileName) {
