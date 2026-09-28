@@ -97,3 +97,9 @@ npm install
 npm run emulators      # shell 1
 npm run test:rules     # shell 2
 ```
+Or in a single command, as the CI does (`.github/workflows/ci.yml`):
+```
+npx firebase-tools@15 emulators:exec --only firestore,storage "npm run test:rules"
+```
+(The standalone `firebase` binary cannot run ES module scripts inside `emulators:exec`, while the
+npm package can.)

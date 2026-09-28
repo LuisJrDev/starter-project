@@ -1,4 +1,6 @@
 # Applicant Showcase App
+[![CI](https://github.com/LuisJrDev/starter-project/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/LuisJrDev/starter-project/actions/workflows/ci.yml)
+
 Welcome to the repository for our Applicant Showcase App - an application designed for job applicants of Symmetry to showcase their capacity to learn and program good code.
 
 ## Who will see this project?
