@@ -39,49 +39,13 @@ class ArticleWidget extends StatelessWidget {
 
   Widget _buildImage(BuildContext context) {
     return CachedNetworkImage(
-        imageUrl: article!.urlToImage!,
-        imageBuilder: (context, imageProvider) => Padding(
-              padding: const EdgeInsetsDirectional.only(end: 14),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20.0),
-                child: Container(
-                  width: MediaQuery.of(context).size.width / 3,
-                  height: double.maxFinite,
-                  decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.08),
-                      image: DecorationImage(
-                          image: imageProvider, fit: BoxFit.cover)),
-                ),
-              ),
-            ),
-        progressIndicatorBuilder: (context, url, downloadProgress) => Padding(
-              padding: const EdgeInsetsDirectional.only(end: 14),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20.0),
-                child: Container(
-                  width: MediaQuery.of(context).size.width / 3,
-                  height: double.maxFinite,
-                  child: CupertinoActivityIndicator(),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.08),
-                  ),
-                ),
-              ),
-            ),
-        errorWidget: (context, url, error) => Padding(
-              padding: const EdgeInsetsDirectional.only(end: 14),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20.0),
-                child: Container(
-                  width: MediaQuery.of(context).size.width / 3,
-                  height: double.maxFinite,
-                  child: Icon(Icons.error),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.08),
-                  ),
-                ),
-              ),
-            ));
+      imageUrl: article!.urlToImage!,
+      imageBuilder: (context, imageProvider) =>
+          _ArticleImageFrame(image: DecorationImage(image: imageProvider, fit: BoxFit.cover)),
+      progressIndicatorBuilder: (context, url, downloadProgress) =>
+          const _ArticleImageFrame(child: CupertinoActivityIndicator()),
+      errorWidget: (context, url, error) => const _ArticleImageFrame(child: Icon(Icons.error)),
+    );
   }
 
   Widget _buildTitleAndDescription() {
@@ -158,5 +122,29 @@ class ArticleWidget extends StatelessWidget {
     if (onRemove != null) {
       onRemove!(article!);
     }
+  }
+}
+
+/// Rounded frame of the article image, shared by its loaded, loading and error states.
+class _ArticleImageFrame extends StatelessWidget {
+  final DecorationImage? image;
+  final Widget? child;
+
+  const _ArticleImageFrame({this.image, this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(end: 14),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20.0),
+        child: Container(
+          width: MediaQuery.of(context).size.width / 3,
+          height: double.maxFinite,
+          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.08), image: image),
+          child: child,
+        ),
+      ),
+    );
   }
 }
