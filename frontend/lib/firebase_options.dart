@@ -26,10 +26,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for macos - '
@@ -59,4 +56,14 @@ class DefaultFirebaseOptions {
     projectId: 'backend-news-symmetry',
     storageBucket: 'backend-news-symmetry.firebasestorage.app',
   );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyDcTixtmxdwJLLAYVKk0Cvc_7uH_XjCB9k',
+    appId: '1:995237750372:ios:b53cb58ed14ce388c4e171',
+    messagingSenderId: '995237750372',
+    projectId: 'backend-news-symmetry',
+    storageBucket: 'backend-news-symmetry.firebasestorage.app',
+    iosBundleId: 'com.example.newsAppCleanArchitecture',
+  );
+
 }

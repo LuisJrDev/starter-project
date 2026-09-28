@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -44,10 +46,15 @@ final sl = GetIt.instance;
 
 // Run against the local Firebase Emulator Suite instead of the real project:
 // flutter run --dart-define=USE_FIREBASE_EMULATORS=true
-// 10.0.2.2 is the host machine as seen from the Android emulator; override it
-// with --dart-define=FIREBASE_EMULATOR_HOST=<ip> when using a physical device.
+// The host machine is 10.0.2.2 from the Android emulator and 127.0.0.1 from the iOS simulator;
+// override it with --dart-define=FIREBASE_EMULATOR_HOST=<ip> when using a physical device.
 const bool _useFirebaseEmulators = bool.fromEnvironment('USE_FIREBASE_EMULATORS');
-const String _firebaseEmulatorHost = String.fromEnvironment('FIREBASE_EMULATOR_HOST', defaultValue: '10.0.2.2');
+const String _firebaseEmulatorHostOverride = String.fromEnvironment('FIREBASE_EMULATOR_HOST');
+
+String get _firebaseEmulatorHost {
+  if (_firebaseEmulatorHostOverride.isNotEmpty) return _firebaseEmulatorHostOverride;
+  return Platform.isAndroid ? '10.0.2.2' : '127.0.0.1';
+}
 
 Future<void> initializeDependencies() async {
   await _initializeFirebase();

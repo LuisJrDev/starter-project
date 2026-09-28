@@ -12,10 +12,11 @@ To do this, follow these steps:
 Once you have completed this appropriately, you can start to work with the project.
 
 ### Firebase configuration (already done in this repository)
-The app is connected to the Firebase project `backend-news-symmetry` (Android only).
-`lib/firebase_options.dart`, `android/app/google-services.json` and `firebase.json` were generated with:
+The app is connected to the Firebase project `backend-news-symmetry` on Android and iOS.
+`lib/firebase_options.dart`, `android/app/google-services.json`, `ios/Runner/GoogleService-Info.plist`
+and `firebase.json` were generated with:
 ```
-flutterfire configure --project=backend-news-symmetry --platforms=android --android-package-name=com.example.news_app_clean_architecture --out=lib/firebase_options.dart
+flutterfire configure --project=backend-news-symmetry --platforms=android,ios --android-package-name=com.example.news_app_clean_architecture --ios-bundle-id=com.example.newsAppCleanArchitecture --out=lib/firebase_options.dart
 ```
 Firebase is initialized in `lib/injection_container.dart` (the composition root), so no presentation or domain code imports Firebase.
 
@@ -26,9 +27,19 @@ fvm flutter run                                             # real Firebase proj
 fvm flutter run --dart-define=USE_FIREBASE_EMULATORS=true   # local Firebase Emulator Suite
 ```
 In emulator mode, start the emulators and seed them first (see the [backend README](../backend/README.md)).
-The Android emulator reaches your machine at `10.0.2.2`, which is the default. On a physical
-device, forward the ports with `adb reverse tcp:8080 tcp:8080 && adb reverse tcp:9199 tcp:9199`
-and add `--dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1`.
+The app reaches your machine at `10.0.2.2` from the Android emulator and at `127.0.0.1` from the
+iOS simulator (chosen automatically). On a physical Android device, forward the ports with
+`adb reverse tcp:8080 tcp:8080 && adb reverse tcp:9199 tcp:9199` and add
+`--dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1`. Seeded thumbnails use the Android host by
+default: for the iOS simulator seed with `EMULATOR_THUMBNAIL_HOST=127.0.0.1 npm run seed:emulator`.
+
+### iOS
+Requires Xcode and CocoaPods (the first build runs `pod install`, which takes a few minutes).
+The minimum version is iOS 13. The simulator needs no signing; a physical iPhone needs your Apple
+Developer team selected in `ios/Runner.xcworkspace` → *Signing & Capabilities*.
+```
+fvm flutter run -d "iPhone 17"
+```
 
 ### Tests
 ```
