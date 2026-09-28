@@ -6,7 +6,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.16.1 <3.0.0"
+  sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
   flutter:
@@ -31,9 +31,11 @@ dependencies:
 
   #Database
   floor: any
+  sqflite: ^2.3.2
 
   #make request to api
   retrofit: ^3.0.1
+  dio: ^4.0.6
 
   # Firebase
   firebase_core: ^2.24.0
