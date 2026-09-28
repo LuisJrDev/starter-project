@@ -30,6 +30,20 @@ The Android emulator reaches your machine at `10.0.2.2`, which is the default. O
 device, forward the ports with `adb reverse tcp:8080 tcp:8080 && adb reverse tcp:9199 tcp:9199`
 and add `--dart-define=FIREBASE_EMULATOR_HOST=127.0.0.1`.
 
+### Tests
+```
+fvm flutter test                  # unit and widget tests (test/ mirrors lib/)
+```
+`integration_test/` holds the end-to-end test of the publish journey (CODING_GUIDELINES 4.2).
+It runs the real app on a device or emulator against the Firebase Emulator Suite, with the real
+security rules. Only the system gallery is replaced by a test image. The test refuses to run
+without the emulator flag, so it can never write to the real project.
+```
+cd ../backend && firebase emulators:start --only firestore,storage              # shell 1
+fvm flutter test integration_test --dart-define=USE_FIREBASE_EMULATORS=true      # shell 2
+```
+Add `--dart-define=SLOW_MOTION=true` to pause after every step, e.g. to record a demo video.
+
 ### Generate files for routing, di etc.:
 `flutter pub run build_runner build --delete-conflicting-outputs`
 ### Generate the icons:
