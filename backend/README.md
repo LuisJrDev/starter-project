@@ -132,8 +132,12 @@ measures below.
    Keep that restriction when creating a new project. There is no Android app (SHA-1) restriction
    on purpose: every developer or reviewer building a debug APK signs it with a different
    certificate.
-3. **Budget alert** on the billing account. It only notifies, it does not cap spending.
-4. **Tests never touch production.** The integration test refuses to run without the emulator
+3. **Photos are published without their metadata.** Thumbnails are public, and photos from a
+   phone carry EXIF with the GPS location, camera and dates (image_picker keeps it on Android and
+   iOS). The app removes EXIF, XMP, IPTC and text chunks before upload and keeps only the JPEG
+   orientation (`ImageMetadataRemover` in the frontend data layer).
+4. **Budget alert** on the billing account. It only notifies, it does not cap spending.
+5. **Tests never touch production.** The integration test refuses to run without the emulator
    flag, and the seed script targets the emulator unless `--target=production` is given.
 
 ### Known limitations and next steps
