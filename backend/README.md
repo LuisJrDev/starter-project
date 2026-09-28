@@ -103,3 +103,43 @@ npx firebase-tools@15 emulators:exec --only firestore,storage "npm run test:rule
 ```
 (The standalone `firebase` binary cannot run ES module scripts inside `emulators:exec`, while the
 npm package can.)
+
+## Security
+
+### Why Firebase API keys are committed
+`frontend/lib/firebase_options.dart`, `frontend/android/app/google-services.json` and
+`scripts/seed.mjs` contain the Firebase client configuration, API keys included. GitHub secret
+scanning reports them as "Google API Key".
+
+They are **not secrets**. A Firebase API key only identifies the project, and it has to ship inside
+every build of the app, so anyone can extract it from the APK
+([Firebase: API keys](https://firebase.google.com/docs/projects/api-keys)). Hiding, rotating or
+removing it from the git history would therefore protect nothing. The project is protected by the
+measures below.
+
+### How the project is protected
+1. **Security rules are the access control.** `firestore.rules` and `storage.rules` enforce the
+   [schema](./docs/DB_SCHEMA.md): documents can only be created, never updated or deleted; lists
+   are limited to 50 documents; thumbnails must be images of up to 5 MB, can never be overwritten,
+   and can only be deleted while orphaned. 66 unit tests cover them and run in CI on every push.
+   They were also verified in production with forbidden requests (edit, delete, overwrite, list
+   without a limit), which all returned `403`.
+2. **Restrict the API keys (required on the Blaze plan).** In
+   [Google Cloud → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials),
+   limit both keys created by Firebase (*Android key* and *Browser key*) to the APIs the project
+   uses: *Cloud Firestore API*, *Cloud Storage for Firebase API* and *Firebase Installations API*.
+   A pay-as-you-go project with an unrestricted key could otherwise be billed for other Google APIs
+   called with it. Do not add an Android app (SHA-1) restriction: every developer or reviewer
+   building a debug APK signs it with a different certificate.
+3. **Budget alert** on the billing account. It only notifies, it does not cap spending.
+4. **Tests never touch production.** The integration test refuses to run without the emulator
+   flag, and the seed script targets the emulator unless `--target=production` is given.
+
+### Known limitations and next steps
+- **Anyone with the app can publish.** Articles are validated by the rules, but there is no
+  authentication yet. The next steps are
+  [App Check](https://firebase.google.com/docs/app-check) (Play Integrity) enforced on Firestore
+  and Storage to reject clients that are not the genuine app, then Firebase Authentication with an
+  `authorId` and owner-only edit/delete rules (see [Future evolution](./docs/DB_SCHEMA.md#future-evolution)).
+- **Orphaned thumbnails** remain if both the article write and the cleanup fail. A scheduled Cloud
+  Function could remove images that no article references.
