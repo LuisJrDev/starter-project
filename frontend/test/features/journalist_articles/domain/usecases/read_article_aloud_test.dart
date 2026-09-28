@@ -1,0 +1,50 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:news_app_clean_architecture/core/resources/data_state.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_narration.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/published_article.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/repository/article_narrator_repository.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/read_article_aloud.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/stop_reading_aloud.dart';
+
+class MockArticleNarratorRepository extends Mock implements ArticleNarratorRepository {}
+
+final article = PublishedArticleEntity(
+  id: 'article-1',
+  title: 'Breaking News',
+  content: 'The **body**.',
+  description: 'The body.',
+  author: 'Daily News Staff',
+  thumbnailUrl: 'https://example.com/1.jpg',
+  publishedAt: DateTime.utc(2026, 9, 28),
+);
+
+void main() {
+  late MockArticleNarratorRepository repository;
+
+  setUpAll(() => registerFallbackValue(const ArticleNarrationEntity(text: '', languageTag: 'en-US')));
+
+  setUp(() {
+    repository = MockArticleNarratorRepository();
+    when(() => repository.read(any())).thenAnswer((_) async => const DataSuccess(null));
+    when(() => repository.stopReading()).thenAnswer((_) async => const DataSuccess(null));
+  });
+
+  test('reads the narration of the article', () async {
+    await ReadArticleAloudUseCase(repository)(params: article);
+
+    verify(() => repository.read(ArticleNarrationEntity.of(article))).called(1);
+  });
+
+  test('does nothing without an article', () async {
+    await ReadArticleAloudUseCase(repository)();
+
+    verifyNever(() => repository.read(any()));
+  });
+
+  test('stops reading', () async {
+    await StopReadingAloudUseCase(repository)();
+
+    verify(() => repository.stopReading()).called(1);
+  });
+}

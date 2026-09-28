@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:get_it/get_it.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:news_app_clean_architecture/firebase_options.dart';
@@ -18,11 +19,14 @@ import 'features/daily_news/domain/usecases/save_article.dart';
 import 'features/daily_news/presentation/bloc/article/local/local_article_bloc.dart';
 import 'features/journalist_articles/data/data_sources/local/author_signature_local_data_source.dart';
 import 'features/journalist_articles/data/data_sources/local/gallery_image_data_source.dart';
+import 'features/journalist_articles/data/data_sources/local/text_to_speech_data_source.dart';
 import 'features/journalist_articles/data/data_sources/remote/article_thumbnail_storage_data_source.dart';
 import 'features/journalist_articles/data/data_sources/remote/published_articles_firestore_data_source.dart';
+import 'features/journalist_articles/data/repository/article_narrator_repository_impl.dart';
 import 'features/journalist_articles/data/repository/author_signature_repository_impl.dart';
 import 'features/journalist_articles/data/repository/published_article_repository_impl.dart';
 import 'features/journalist_articles/data/repository/thumbnail_picker_repository_impl.dart';
+import 'features/journalist_articles/domain/repository/article_narrator_repository.dart';
 import 'features/journalist_articles/domain/repository/author_signature_repository.dart';
 import 'features/journalist_articles/domain/repository/published_article_repository.dart';
 import 'features/journalist_articles/domain/repository/thumbnail_picker_repository.dart';
@@ -30,6 +34,9 @@ import 'features/journalist_articles/domain/usecases/get_published_articles.dart
 import 'features/journalist_articles/domain/usecases/get_saved_author_name.dart';
 import 'features/journalist_articles/domain/usecases/pick_thumbnail_from_gallery.dart';
 import 'features/journalist_articles/domain/usecases/publish_article.dart';
+import 'features/journalist_articles/domain/usecases/read_article_aloud.dart';
+import 'features/journalist_articles/domain/usecases/stop_reading_aloud.dart';
+import 'features/journalist_articles/presentation/bloc/article_narration/article_narration_cubit.dart';
 import 'features/journalist_articles/presentation/bloc/publish_article/publish_article_cubit.dart';
 import 'features/journalist_articles/presentation/bloc/published_articles/published_articles_cubit.dart';
 
@@ -99,21 +106,26 @@ Future<void> _registerJournalistArticles() async {
   sl.registerSingleton<AuthorSignatureLocalDataSource>(
     AuthorSignatureLocalDataSource(await SharedPreferences.getInstance()),
   );
+  sl.registerSingleton<TextToSpeechDataSource>(TextToSpeechDataSource(FlutterTts()));
 
   // Repositories
   sl.registerSingleton<PublishedArticleRepository>(PublishedArticleRepositoryImpl(sl(), sl()));
   sl.registerSingleton<ThumbnailPickerRepository>(ThumbnailPickerRepositoryImpl(sl()));
   sl.registerSingleton<AuthorSignatureRepository>(AuthorSignatureRepositoryImpl(sl()));
+  sl.registerSingleton<ArticleNarratorRepository>(ArticleNarratorRepositoryImpl(sl()));
 
   // Use cases
   sl.registerSingleton<PublishArticleUseCase>(PublishArticleUseCase(sl(), sl()));
   sl.registerSingleton<GetPublishedArticlesUseCase>(GetPublishedArticlesUseCase(sl()));
   sl.registerSingleton<PickThumbnailFromGalleryUseCase>(PickThumbnailFromGalleryUseCase(sl()));
   sl.registerSingleton<GetSavedAuthorNameUseCase>(GetSavedAuthorNameUseCase(sl()));
+  sl.registerSingleton<ReadArticleAloudUseCase>(ReadArticleAloudUseCase(sl()));
+  sl.registerSingleton<StopReadingAloudUseCase>(StopReadingAloudUseCase(sl()));
 
   // Cubits
   sl.registerFactory<PublishArticleCubit>(() => PublishArticleCubit(sl(), sl(), sl()));
   sl.registerFactory<PublishedArticlesCubit>(() => PublishedArticlesCubit(sl()));
+  sl.registerFactory<ArticleNarrationCubit>(() => ArticleNarrationCubit(sl(), sl()));
 }
 
 Future<void> _initializeFirebase() async {

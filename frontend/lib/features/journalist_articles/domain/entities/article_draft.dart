@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import 'article_thumbnail.dart';
+import 'markdown_text.dart';
 
 enum ArticleDraftError {
   titleEmpty,
@@ -94,7 +95,7 @@ class ArticleDraftEntity extends Equatable {
 
   /// Plain-text excerpt of [content] shown in article lists.
   String get description {
-    return _truncateWithoutSplittingCharacters(_markdownToPlainText(content), descriptionMaxLength);
+    return _truncateWithoutSplittingCharacters(markdownToPlainText(content), descriptionMaxLength);
   }
 
   ArticleDraftError? get _thumbnailError {
@@ -121,23 +122,6 @@ class _TextFieldRule {
     if (value.length > maxLength) return tooLongError;
     return null;
   }
-}
-
-final _markdownImage = RegExp(r'!\[[^\]]*\]\([^)]*\)');
-final _markdownLink = RegExp(r'\[([^\]]*)\]\([^)]*\)');
-final _markdownLinePrefix = RegExp(r'^\s{0,3}(#{1,6}|>|[-*+]|\d+\.)\s+', multiLine: true);
-final _markdownInlineMarker = RegExp(r'(\*\*|__|\*|_|~~|`)');
-final _whitespace = RegExp(r'\s+');
-
-// Keep in sync with deriveDescription() in backend/scripts/seed.mjs.
-String _markdownToPlainText(String markdown) {
-  return markdown
-      .replaceAll(_markdownImage, '')
-      .replaceAllMapped(_markdownLink, (match) => match[1]!)
-      .replaceAll(_markdownLinePrefix, '')
-      .replaceAll(_markdownInlineMarker, '')
-      .replaceAll(_whitespace, ' ')
-      .trim();
 }
 
 String _truncateWithoutSplittingCharacters(String text, int maxLength) {
