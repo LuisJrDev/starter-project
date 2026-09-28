@@ -14,6 +14,9 @@ import 'features/daily_news/domain/usecases/get_saved_article.dart';
 import 'features/daily_news/domain/usecases/remove_article.dart';
 import 'features/daily_news/domain/usecases/save_article.dart';
 import 'features/daily_news/presentation/bloc/article/local/local_article_bloc.dart';
+import 'features/journalist_articles/domain/usecases/get_published_articles.dart';
+import 'features/journalist_articles/domain/usecases/mock/mock_published_articles_store.dart';
+import 'features/journalist_articles/domain/usecases/publish_article.dart';
 
 final sl = GetIt.instance;
 
@@ -56,6 +59,11 @@ Future<void> initializeDependencies() async {
   sl.registerSingleton<RemoveArticleUseCase>(
     RemoveArticleUseCase(sl())
   );
+
+  // Journalist articles (mock data until the data layer, phase 2.3)
+  sl.registerSingleton<MockPublishedArticlesStore>(MockPublishedArticlesStore());
+  sl.registerSingleton<PublishArticleUseCase>(PublishArticleUseCase(sl()));
+  sl.registerSingleton<GetPublishedArticlesUseCase>(GetPublishedArticlesUseCase(sl()));
 
 
   //Blocs
