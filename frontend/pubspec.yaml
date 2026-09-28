@@ -49,6 +49,12 @@ dependencies:
   #chached image 
   cached_network_image: ^3.2.0
 
+  #pick article thumbnails from the gallery
+  image_picker: ^1.2.0
+
+  #render article content (flutter_markdown is discontinued, this is its official successor)
+  flutter_markdown_plus: ^1.0.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -56,6 +62,8 @@ dev_dependencies:
   retrofit_generator: 3.0.1+1
   floor_generator: 1.2.0
   build_runner: 2.1.2
+  #mocks for unit tests (bloc_test is incompatible with retrofit_generator's analyzer ^2.0.0)
+  mocktail: ^1.0.5
   
 
 flutter:
