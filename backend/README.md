@@ -47,3 +47,18 @@ Be careful becasuse it will overwrite the existing firestore.rules file of your 
 To run the application locally, use the following command:
 
 ```firebase emulators:start```
+
+## Seeding sample articles
+`scripts/seed.mjs` publishes the sample articles in `scripts/seed-data/` following the
+publishing flow described in the [schema](./docs/DB_SCHEMA.md#publishing-flow): it uploads each
+thumbnail to `media/articles/{articleId}.{ext}` and then writes `articles/{articleId}`.
+It uses the Firebase **client** SDK, so every write is checked by the security rules, just like
+the app's writes.
+
+```
+npm install
+firebase emulators:start --only firestore,storage   # shell 1
+npm run seed:emulator                               # shell 2
+```
+
+Open the Emulator UI (http://127.0.0.1:4000) to browse the seeded documents and images.
