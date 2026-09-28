@@ -184,6 +184,8 @@ class PublishArticleForm extends HookWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(
+        // Long enough to read the message and decide to retry.
+        duration: const Duration(seconds: 10),
         content: Text(isPublishFailure
             ? 'Your article could not be published. Check your connection and try again.'
             : 'The gallery could not be opened. Check the app permissions and try again.'),
