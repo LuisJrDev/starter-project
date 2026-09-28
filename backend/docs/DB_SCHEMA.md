@@ -63,6 +63,11 @@ Rules that apply to the whole document:
 - **Immutable**: documents can be created and read, but not updated or deleted, while the app has
   no authentication. Otherwise any client could edit or delete any journalist's work.
 - The document id is not stored as a field. The model reads it from `DocumentSnapshot.id`.
+  It must have the shape of a Firestore auto-generated id (20 alphanumeric characters).
+- **Lengths are measured in UTF-16 code units**, which is what the security rules' `size()`
+  counts. It is identical to Dart's `String.length`, so an emoji counts as 2 (a title fits
+  50 emoji, not 100). The UI counter and the entity must use `String.length`. Flutter's
+  `TextField.maxLength` counts grapheme clusters instead, so it cannot be used as-is.
 
 #### Example document
 
@@ -84,6 +89,9 @@ Rules that apply to the whole document:
 | Screen | Query | Index |
 |---|---|---|
 | Home, community tab | `articles` ordered by `publishedAt` desc, paginated with `limit(20)` + `startAfterDocument` | Automatic single-field index (no composite index required) |
+
+List queries **must** set a `limit` of at most 50. Otherwise the rules reject them, so no client
+can download the whole collection in one request.
 | Article detail | Read from the list (the whole document is already loaded) | none |
 
 ## Cloud Storage `media/articles/`
@@ -93,7 +101,7 @@ Rules that apply to the whole document:
 | Path | `media/articles/{articleId}.{extension}` |
 | Allowed extensions → content type | `jpg` → `image/jpeg`, `png` → `image/png`, `webp` → `image/webp` |
 | Maximum size | 5 MB |
-| Create | Only if the object does not exist yet **and** no article with that id exists yet (no overwriting published thumbnails) |
+| Create | Only if the object does not exist yet **and** no article with that id exists yet. Re-uploading to an existing path counts as a `create` in Storage rules, so the rule checks `resource == null` explicitly |
 | Update | Denied |
 | Delete | Only while **no** Firestore document `articles/{articleId}` exists. This allows cleanup of orphaned uploads but never deletion of a published article's image |
 | Read | Public |

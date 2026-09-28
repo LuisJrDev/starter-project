@@ -62,3 +62,16 @@ npm run seed:emulator                               # shell 2
 ```
 
 Open the Emulator UI (http://127.0.0.1:4000) to browse the seeded documents and images.
+
+## Testing the security rules
+`test/` contains the unit tests of `firestore.rules` and `storage.rules`
+([@firebase/rules-unit-testing](https://firebase.google.com/docs/rules/unit-tests) + the
+built-in `node:test` runner). There is one or more tests for every constraint in the
+[schema](./docs/DB_SCHEMA.md), including the edge cases (exact limits, emoji lengths, forged
+timestamps, foreign thumbnail URLs, overwrites, orphan cleanup).
+
+```
+npm install
+npm run emulators      # shell 1
+npm run test:rules     # shell 2
+```
