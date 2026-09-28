@@ -51,6 +51,10 @@ const TARGETS = {
       connectFirestoreEmulator(firestore, '127.0.0.1', 8080);
       connectStorageEmulator(storage, '127.0.0.1', 9199);
     },
+    // Download URLs come back as http://127.0.0.1:9199/..., but 127.0.0.1 inside the Android
+    // emulator is the device itself. Store them with the host the app reaches the emulator at:
+    // 10.0.2.2 (Android emulator) or 127.0.0.1 (physical device with `adb reverse tcp:9199 tcp:9199`).
+    thumbnailOrigin: `http://${process.env.EMULATOR_THUMBNAIL_HOST ?? '10.0.2.2'}:9199`,
   },
   // Web app "news-backend-scripts". Firebase client config is a public identifier, not a secret:
   // access is controlled by the security rules.
@@ -80,7 +84,7 @@ function connectToTarget(target) {
   const firestore = getFirestore(app);
   const storage = getStorage(app);
   target.connectToEmulators?.(firestore, storage);
-  return { firestore, storage };
+  return { firestore, storage, thumbnailOrigin: target.thumbnailOrigin };
 }
 
 async function readSeedArticles() {
@@ -107,6 +111,10 @@ async function uploadThumbnail(storage, articleId, imageFileName) {
   return thumbnailRef;
 }
 
+function withOrigin(url, origin) {
+  return origin ? url.replace(/^https?:\/\/[^/]+/, origin) : url;
+}
+
 function buildArticleDocument(seedArticle, thumbnailURL) {
   return {
     title: seedArticle.title,
@@ -127,10 +135,10 @@ async function writeArticleOrRemoveThumbnail(articleRef, articleDocument, thumbn
   }
 }
 
-async function publishSeedArticle({ firestore, storage }, seedArticle) {
+async function publishSeedArticle({ firestore, storage, thumbnailOrigin }, seedArticle) {
   const articleRef = doc(collection(firestore, 'articles'));
   const thumbnailRef = await uploadThumbnail(storage, articleRef.id, seedArticle.image);
-  const thumbnailURL = await getDownloadURL(thumbnailRef);
+  const thumbnailURL = withOrigin(await getDownloadURL(thumbnailRef), thumbnailOrigin);
   await writeArticleOrRemoveThumbnail(articleRef, buildArticleDocument(seedArticle, thumbnailURL), thumbnailRef);
   console.log(`✔ articles/${articleRef.id}  "${seedArticle.title}"`);
 }

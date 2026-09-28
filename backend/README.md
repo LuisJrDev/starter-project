@@ -78,6 +78,10 @@ npm run seed:emulator                               # shell 2
 
 Open the Emulator UI (http://127.0.0.1:4000) to browse the seeded documents and images.
 
+In emulator mode the thumbnail URLs are stored with host `10.0.2.2`, which is how the Android
+emulator reaches your machine. For a physical device using `adb reverse`, seed with
+`EMULATOR_THUMBNAIL_HOST=127.0.0.1 npm run seed:emulator`.
+
 To seed the real project, deploy the rules first and then run `npm run seed:production`.
 It uses the `news-backend-scripts` Web app of the Firebase project.
 
