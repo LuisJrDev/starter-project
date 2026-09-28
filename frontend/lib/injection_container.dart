@@ -22,6 +22,8 @@ import 'features/journalist_articles/domain/usecases/pick_thumbnail_from_gallery
 import 'package:image_picker/image_picker.dart';
 import 'features/journalist_articles/domain/usecases/mock/mock_published_articles_store.dart';
 import 'features/journalist_articles/domain/usecases/publish_article.dart';
+import 'features/journalist_articles/presentation/bloc/publish_article/publish_article_cubit.dart';
+import 'features/journalist_articles/presentation/bloc/published_articles/published_articles_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -83,6 +85,9 @@ Future<void> initializeDependencies() async {
   sl.registerFactory<LocalArticleBloc>(
     ()=> LocalArticleBloc(sl(),sl(),sl())
   );
+
+  sl.registerFactory<PublishArticleCubit>(() => PublishArticleCubit(sl(), sl()));
+  sl.registerFactory<PublishedArticlesCubit>(() => PublishedArticlesCubit(sl()));
 
 
 }
