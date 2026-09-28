@@ -55,6 +55,9 @@ dependencies:
   #remember the journalist's signature between sessions
   shared_preferences: ^2.5.3
 
+  #read articles aloud with the device's text-to-speech engine (no network, no API key)
+  flutter_tts: ^4.2.5
+
   #render article content (flutter_markdown is discontinued, this is its official successor)
   flutter_markdown_plus: ^1.0.3
 
