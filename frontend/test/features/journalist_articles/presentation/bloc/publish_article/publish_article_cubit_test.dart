@@ -7,6 +7,7 @@ import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_draft.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_thumbnail.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/invalid_article_draft_exception.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/get_saved_author_name.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/pick_thumbnail_from_gallery.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/publish_article.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/publish_article/publish_article_cubit.dart';
@@ -17,6 +18,8 @@ import '../../../../../helpers/cubit_states.dart';
 class MockPublishArticleUseCase extends Mock implements PublishArticleUseCase {}
 
 class MockPickThumbnailFromGalleryUseCase extends Mock implements PickThumbnailFromGalleryUseCase {}
+
+class MockGetSavedAuthorNameUseCase extends Mock implements GetSavedAuthorNameUseCase {}
 
 const thumbnail = ArticleThumbnailEntity(localPath: '/gallery/photo.jpg', sizeInBytes: 1024);
 
@@ -30,6 +33,7 @@ const validDraft = ArticleDraftEntity(
 void main() {
   late MockPublishArticleUseCase publishArticle;
   late MockPickThumbnailFromGalleryUseCase pickThumbnail;
+  late MockGetSavedAuthorNameUseCase getSavedAuthorName;
   late PublishArticleCubit cubit;
 
   setUpAll(() => registerFallbackValue(const ArticleDraftEntity()));
@@ -37,7 +41,8 @@ void main() {
   setUp(() {
     publishArticle = MockPublishArticleUseCase();
     pickThumbnail = MockPickThumbnailFromGalleryUseCase();
-    cubit = PublishArticleCubit(publishArticle, pickThumbnail);
+    getSavedAuthorName = MockGetSavedAuthorNameUseCase();
+    cubit = PublishArticleCubit(publishArticle, pickThumbnail, getSavedAuthorName);
   });
 
   tearDown(() => cubit.close());
@@ -194,8 +199,41 @@ void main() {
     });
   });
 
+  group('saved signature', () {
+    test('prefills the signature of the previous article', () async {
+      when(() => getSavedAuthorName()).thenAnswer((_) async => const DataSuccess('Daily News Staff'));
+
+      await cubit.loadSavedAuthorName();
+
+      expect(cubit.state.draft.author, 'Daily News Staff');
+    });
+
+    test('never overwrites a signature the journalist already typed', () async {
+      when(() => getSavedAuthorName()).thenAnswer((_) async => const DataSuccess('Daily News Staff'));
+      cubit.changeAuthor('Someone else');
+
+      await cubit.loadSavedAuthorName();
+
+      expect(cubit.state.draft.author, 'Someone else');
+    });
+
+    test('leaves the signature empty when none was saved', () async {
+      when(() => getSavedAuthorName()).thenAnswer((_) async => const DataSuccess(null));
+
+      final states = await statesEmittedBy(cubit, cubit.loadSavedAuthorName);
+
+      expect(states, isEmpty);
+    });
+  });
+
   group('hasUnsavedChanges', () {
     test('is false for an untouched draft', () {
+      expect(cubit.state.hasUnsavedChanges, isFalse);
+    });
+
+    test('is false when only the prefilled signature is there', () {
+      cubit.changeAuthor('Daily News Staff');
+
       expect(cubit.state.hasUnsavedChanges, isFalse);
     });
 

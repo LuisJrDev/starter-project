@@ -7,6 +7,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_draft.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_thumbnail.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/get_saved_author_name.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/pick_thumbnail_from_gallery.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/publish_article.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/publish_article/publish_article_cubit.dart';
@@ -18,15 +19,20 @@ class MockPublishArticleUseCase extends Mock implements PublishArticleUseCase {}
 
 class MockPickThumbnailFromGalleryUseCase extends Mock implements PickThumbnailFromGalleryUseCase {}
 
+class MockGetSavedAuthorNameUseCase extends Mock implements GetSavedAuthorNameUseCase {}
+
 void main() {
   late MockPublishArticleUseCase publishArticle;
   late MockPickThumbnailFromGalleryUseCase pickThumbnail;
+  late MockGetSavedAuthorNameUseCase getSavedAuthorName;
 
   setUpAll(() => registerFallbackValue(const ArticleDraftEntity()));
 
   setUp(() {
     publishArticle = MockPublishArticleUseCase();
     pickThumbnail = MockPickThumbnailFromGalleryUseCase();
+    getSavedAuthorName = MockGetSavedAuthorNameUseCase();
+    when(() => getSavedAuthorName()).thenAnswer((_) async => const DataSuccess(null));
     when(() => pickThumbnail()).thenAnswer(
       (_) async => const DataSuccess(ArticleThumbnailEntity(localPath: '/gallery/photo.jpg', sizeInBytes: 1024)),
     );
@@ -46,7 +52,7 @@ void main() {
             context,
             MaterialPageRoute(
               builder: (_) => BlocProvider(
-                create: (_) => PublishArticleCubit(publishArticle, pickThumbnail),
+                create: (_) => PublishArticleCubit(publishArticle, pickThumbnail, getSavedAuthorName)..loadSavedAuthorName(),
                 child: const PublishArticleForm(),
               ),
             ),
@@ -84,6 +90,14 @@ void main() {
     expect(find.text('Attach an image to illustrate your article.'), findsOneWidget);
     expect(find.text('Write your article before publishing it.'), findsOneWidget);
     verifyNever(() => publishArticle(params: any(named: 'params')));
+  });
+
+  testWidgets('prefills the signature of the previous article', (tester) async {
+    when(() => getSavedAuthorName()).thenAnswer((_) async => const DataSuccess('Daily News Staff'));
+
+    await openPublishForm(tester);
+
+    expect(find.widgetWithText(TextField, 'Daily News Staff'), findsOneWidget);
   });
 
   testWidgets('the title counter counts an emoji as 2, like the backend', (tester) async {

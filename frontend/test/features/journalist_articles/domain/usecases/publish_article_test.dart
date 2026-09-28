@@ -1,13 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_draft.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_thumbnail.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/invalid_article_draft_exception.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/published_article.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/params/get_published_articles_params.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/get_published_articles.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/mock/mock_published_articles_store.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/repository/author_signature_repository.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/repository/published_article_repository.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/publish_article.dart';
+
+class MockPublishedArticleRepository extends Mock implements PublishedArticleRepository {}
+
+class MockAuthorSignatureRepository extends Mock implements AuthorSignatureRepository {}
 
 const validDraft = ArticleDraftEntity(
   title: 'Breaking News!',
@@ -17,49 +20,73 @@ const validDraft = ArticleDraftEntity(
 );
 
 void main() {
+  late MockPublishedArticleRepository repository;
+  late MockAuthorSignatureRepository signatures;
   late PublishArticleUseCase publishArticle;
-  late GetPublishedArticlesUseCase getPublishedArticles;
+
+  setUpAll(() => registerFallbackValue(const ArticleDraftEntity()));
 
   setUp(() {
-    final store = MockPublishedArticlesStore(latency: Duration.zero, initialArticles: const []);
-    publishArticle = PublishArticleUseCase(store);
-    getPublishedArticles = GetPublishedArticlesUseCase(store);
+    repository = MockPublishedArticleRepository();
+    signatures = MockAuthorSignatureRepository();
+    publishArticle = PublishArticleUseCase(repository, signatures);
+    when(() => repository.publishArticle(any())).thenAnswer((_) async => const DataSuccess(null));
+    when(() => signatures.saveAuthorName(any())).thenAnswer((_) async => const DataSuccess(null));
   });
 
-  Future<List<PublishedArticleEntity>> listPublishedArticles() async {
-    final page = await getPublishedArticles(params: const GetPublishedArticlesParams());
-    return page.data!;
-  }
-
-  test('publishes a valid draft', () async {
+  test('publishes a valid draft through the repository', () async {
     final result = await publishArticle(params: validDraft);
 
     expect(result, isA<DataSuccess<void>>());
-    expect(await listPublishedArticles(), hasLength(1));
+    verify(() => repository.publishArticle(validDraft)).called(1);
   });
 
-  test('stores the trimmed text, the derived description and a Firestore-like id', () async {
-    await publishArticle(params: validDraft.withTitle('  Breaking News!  ').withAuthor(' Staff '));
+  test('publishes the trimmed text', () async {
+    await publishArticle(params: validDraft.withTitle('  Breaking News!  ').withAuthor(' Daily News Staff '));
 
-    final article = (await listPublishedArticles()).single;
-    expect(article.title, 'Breaking News!');
-    expect(article.author, 'Staff');
-    expect(article.content, validDraft.content);
-    expect(article.description, 'Subtitle This is breaking news.');
-    expect(article.id, matches(RegExp(r'^[A-Za-z0-9]{20}$')));
-    expect(DateTime.now().difference(article.publishedAt).inSeconds, lessThan(5));
+    verify(() => repository.publishArticle(validDraft)).called(1);
   });
 
-  test('rejects an invalid draft with every error and publishes nothing', () async {
+  test('remembers the signature once the article is published', () async {
+    await publishArticle(params: validDraft.withAuthor('  Daily News Staff '));
+
+    verify(() => signatures.saveAuthorName('Daily News Staff')).called(1);
+  });
+
+  test('does not remember the signature when publishing fails', () async {
+    when(() => repository.publishArticle(any())).thenAnswer((_) async => DataFailed(Exception('offline')));
+
+    await publishArticle(params: validDraft);
+
+    verifyNever(() => signatures.saveAuthorName(any()));
+  });
+
+  test('is still a success when the signature cannot be remembered', () async {
+    when(() => signatures.saveAuthorName(any())).thenAnswer((_) async => DataFailed(Exception('disk full')));
+
+    final result = await publishArticle(params: validDraft);
+
+    expect(result, isA<DataSuccess<void>>());
+  });
+
+  test('returns the repository failure', () async {
+    final error = Exception('offline');
+    when(() => repository.publishArticle(any())).thenAnswer((_) async => DataFailed(error));
+
+    final result = await publishArticle(params: validDraft);
+
+    expect(result.error, same(error));
+  });
+
+  test('rejects an invalid draft with every error and never reaches the repository', () async {
     final result = await publishArticle(params: const ArticleDraftEntity(title: 'Only a title'));
 
-    expect(result, isA<DataFailed<void>>());
     expect((result.error! as InvalidArticleDraftException).errors, {
       ArticleDraftError.contentEmpty,
       ArticleDraftError.authorEmpty,
       ArticleDraftError.thumbnailMissing,
     });
-    expect(await listPublishedArticles(), isEmpty);
+    verifyNever(() => repository.publishArticle(any()));
   });
 
   test('treats a missing draft as an empty one', () async {

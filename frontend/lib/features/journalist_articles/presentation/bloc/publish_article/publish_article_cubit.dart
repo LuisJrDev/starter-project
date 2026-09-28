@@ -3,6 +3,7 @@ import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 
 import '../../../domain/entities/article_draft.dart';
 import '../../../domain/entities/invalid_article_draft_exception.dart';
+import '../../../domain/usecases/get_saved_author_name.dart';
 import '../../../domain/usecases/pick_thumbnail_from_gallery.dart';
 import '../../../domain/usecases/publish_article.dart';
 import 'publish_article_state.dart';
@@ -10,9 +11,20 @@ import 'publish_article_state.dart';
 class PublishArticleCubit extends Cubit<PublishArticleState> {
   final PublishArticleUseCase _publishArticleUseCase;
   final PickThumbnailFromGalleryUseCase _pickThumbnailFromGalleryUseCase;
+  final GetSavedAuthorNameUseCase _getSavedAuthorNameUseCase;
 
-  PublishArticleCubit(this._publishArticleUseCase, this._pickThumbnailFromGalleryUseCase)
-      : super(const PublishArticleEditing(ArticleDraftEntity()));
+  PublishArticleCubit(
+    this._publishArticleUseCase,
+    this._pickThumbnailFromGalleryUseCase,
+    this._getSavedAuthorNameUseCase,
+  ) : super(const PublishArticleEditing(ArticleDraftEntity()));
+
+  /// Prefills the signature of the journalist's previous article, unless they already typed one.
+  Future<void> loadSavedAuthorName() async {
+    final authorName = (await _getSavedAuthorNameUseCase()).data;
+    if (authorName == null || state.draft.author.isNotEmpty) return;
+    _updateDraft(state.draft.withAuthor(authorName));
+  }
 
   void changeTitle(String title) => _updateDraft(state.draft.withTitle(title));
 

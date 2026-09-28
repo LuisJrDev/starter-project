@@ -21,7 +21,7 @@ class PublishArticleView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<PublishArticleCubit>(),
+      create: (_) => sl<PublishArticleCubit>()..loadSavedAuthorName(),
       child: const PublishArticleForm(),
     );
   }
@@ -56,7 +56,10 @@ class PublishArticleForm extends HookWidget {
       content: useTextEditingController(),
     );
     return BlocConsumer<PublishArticleCubit, PublishArticleState>(
-      listener: _onStateChanged,
+      listener: (context, state) {
+        _prefillAuthor(controllers.author, state);
+        _onStateChanged(context, state);
+      },
       builder: (context, state) => PopScope(
         canPop: _canLeaveWithoutConfirmation(state),
         onPopInvokedWithResult: (didPop, _) => _onLeaveBlocked(context, didPop),
@@ -160,6 +163,12 @@ class PublishArticleForm extends HookWidget {
   void _onPublishPressed(BuildContext context) {
     FocusScope.of(context).unfocus();
     context.read<PublishArticleCubit>().publish();
+  }
+
+  void _prefillAuthor(TextEditingController authorController, PublishArticleState state) {
+    if (authorController.text.isEmpty && state.draft.author.isNotEmpty) {
+      authorController.text = state.draft.author;
+    }
   }
 
   void _onStateChanged(BuildContext context, PublishArticleState state) {

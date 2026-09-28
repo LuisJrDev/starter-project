@@ -1,26 +1,34 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:get_it/get_it.dart';
-import 'package:dio/dio.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:news_app_clean_architecture/firebase_options.dart';
 import 'package:news_app_clean_architecture/features/daily_news/data/data_sources/remote/news_api_service.dart';
 import 'package:news_app_clean_architecture/features/daily_news/data/repository/article_repository_impl.dart';
 import 'package:news_app_clean_architecture/features/daily_news/domain/repository/article_repository.dart';
 import 'package:news_app_clean_architecture/features/daily_news/domain/usecases/get_article.dart';
 import 'package:news_app_clean_architecture/features/daily_news/presentation/bloc/article/remote/remote_article_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'features/daily_news/data/data_sources/local/app_database.dart';
 import 'features/daily_news/domain/usecases/get_saved_article.dart';
 import 'features/daily_news/domain/usecases/remove_article.dart';
 import 'features/daily_news/domain/usecases/save_article.dart';
 import 'features/daily_news/presentation/bloc/article/local/local_article_bloc.dart';
+import 'features/journalist_articles/data/data_sources/local/author_signature_local_data_source.dart';
 import 'features/journalist_articles/data/data_sources/local/gallery_image_data_source.dart';
+import 'features/journalist_articles/data/data_sources/remote/article_thumbnail_storage_data_source.dart';
+import 'features/journalist_articles/data/data_sources/remote/published_articles_firestore_data_source.dart';
+import 'features/journalist_articles/data/repository/author_signature_repository_impl.dart';
+import 'features/journalist_articles/data/repository/published_article_repository_impl.dart';
 import 'features/journalist_articles/data/repository/thumbnail_picker_repository_impl.dart';
+import 'features/journalist_articles/domain/repository/author_signature_repository.dart';
+import 'features/journalist_articles/domain/repository/published_article_repository.dart';
 import 'features/journalist_articles/domain/repository/thumbnail_picker_repository.dart';
 import 'features/journalist_articles/domain/usecases/get_published_articles.dart';
+import 'features/journalist_articles/domain/usecases/get_saved_author_name.dart';
 import 'features/journalist_articles/domain/usecases/pick_thumbnail_from_gallery.dart';
-import 'package:image_picker/image_picker.dart';
-import 'features/journalist_articles/domain/usecases/mock/mock_published_articles_store.dart';
 import 'features/journalist_articles/domain/usecases/publish_article.dart';
 import 'features/journalist_articles/presentation/bloc/publish_article/publish_article_cubit.dart';
 import 'features/journalist_articles/presentation/bloc/published_articles/published_articles_cubit.dart';
@@ -67,15 +75,7 @@ Future<void> initializeDependencies() async {
     RemoveArticleUseCase(sl())
   );
 
-  // Journalist articles (mock data until the data layer, phase 2.3)
-  sl.registerSingleton<MockPublishedArticlesStore>(MockPublishedArticlesStore());
-  sl.registerSingleton<PublishArticleUseCase>(PublishArticleUseCase(sl()));
-  sl.registerSingleton<GetPublishedArticlesUseCase>(GetPublishedArticlesUseCase(sl()));
-
-  sl.registerSingleton<GalleryImageDataSource>(GalleryImageDataSource(ImagePicker()));
-  sl.registerSingleton<ThumbnailPickerRepository>(ThumbnailPickerRepositoryImpl(sl()));
-  sl.registerSingleton<PickThumbnailFromGalleryUseCase>(PickThumbnailFromGalleryUseCase(sl()));
-
+  await _registerJournalistArticles();
 
   //Blocs
   sl.registerFactory<RemoteArticlesBloc>(
@@ -86,14 +86,43 @@ Future<void> initializeDependencies() async {
     ()=> LocalArticleBloc(sl(),sl(),sl())
   );
 
-  sl.registerFactory<PublishArticleCubit>(() => PublishArticleCubit(sl(), sl()));
+
+}
+
+Future<void> _registerJournalistArticles() async {
+  // Data sources
+  sl.registerSingleton<PublishedArticlesFirestoreDataSource>(
+    PublishedArticlesFirestoreDataSource(FirebaseFirestore.instance),
+  );
+  sl.registerSingleton<ArticleThumbnailStorageDataSource>(ArticleThumbnailStorageDataSource(FirebaseStorage.instance));
+  sl.registerSingleton<GalleryImageDataSource>(GalleryImageDataSource(ImagePicker()));
+  sl.registerSingleton<AuthorSignatureLocalDataSource>(
+    AuthorSignatureLocalDataSource(await SharedPreferences.getInstance()),
+  );
+
+  // Repositories
+  sl.registerSingleton<PublishedArticleRepository>(PublishedArticleRepositoryImpl(sl(), sl()));
+  sl.registerSingleton<ThumbnailPickerRepository>(ThumbnailPickerRepositoryImpl(sl()));
+  sl.registerSingleton<AuthorSignatureRepository>(AuthorSignatureRepositoryImpl(sl()));
+
+  // Use cases
+  sl.registerSingleton<PublishArticleUseCase>(PublishArticleUseCase(sl(), sl()));
+  sl.registerSingleton<GetPublishedArticlesUseCase>(GetPublishedArticlesUseCase(sl()));
+  sl.registerSingleton<PickThumbnailFromGalleryUseCase>(PickThumbnailFromGalleryUseCase(sl()));
+  sl.registerSingleton<GetSavedAuthorNameUseCase>(GetSavedAuthorNameUseCase(sl()));
+
+  // Cubits
+  sl.registerFactory<PublishArticleCubit>(() => PublishArticleCubit(sl(), sl(), sl()));
   sl.registerFactory<PublishedArticlesCubit>(() => PublishedArticlesCubit(sl()));
-
-
 }
 
 Future<void> _initializeFirebase() async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // Fail within 30 s instead of retrying for up to 10 minutes, so the publish screen
+  // can report the problem and offer to retry.
+  FirebaseStorage.instance
+    ..setMaxUploadRetryTime(const Duration(seconds: 30))
+    ..setMaxOperationRetryTime(const Duration(seconds: 30));
   if (_useFirebaseEmulators) {
     await _connectToFirebaseEmulators();
   }

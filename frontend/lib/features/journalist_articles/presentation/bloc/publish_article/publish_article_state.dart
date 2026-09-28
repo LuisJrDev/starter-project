@@ -9,7 +9,9 @@ sealed class PublishArticleState extends Equatable {
 
   const PublishArticleState(this.draft);
 
-  bool get hasUnsavedChanges => draft != const ArticleDraftEntity();
+  /// Whether leaving would lose the journalist's work. The signature alone does not count:
+  /// it is prefilled from the previous article and remembered anyway.
+  bool get hasUnsavedChanges => draft.title.isNotEmpty || draft.content.isNotEmpty || draft.thumbnail != null;
 
   /// Field errors to show. Empty until the journalist first tries to publish.
   Set<ArticleDraftError> get visibleErrors => const {};
