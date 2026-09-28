@@ -28,6 +28,15 @@ async function seedThumbnailBypassingRules(fileName) {
   );
 }
 
+// testEnv.clearStorage() only empties the legacy default bucket ({projectId}.appspot.com),
+// not the {projectId}.firebasestorage.app bucket this project uses.
+async function clearThumbnailsFolder() {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    const { items } = await context.storage(`gs://${BUCKET}`).ref('media/articles').listAll();
+    await Promise.all(items.map((item) => item.delete()));
+  });
+}
+
 async function publishArticleBypassingRules(articleId) {
   await testEnv.withSecurityRulesDisabled((context) =>
     setDoc(doc(context.firestore(), 'articles', articleId), { ...validArticle(articleId), publishedAt: Timestamp.now() }),
@@ -40,11 +49,12 @@ before(async () => {
 
 beforeEach(async () => {
   await testEnv.clearFirestore();
-  await testEnv.clearStorage();
+  await clearThumbnailsFolder();
   storage = testEnv.unauthenticatedContext().storage(`gs://${BUCKET}`);
 });
 
 after(async () => {
+  await clearThumbnailsFolder();
   await testEnv.cleanup();
 });
 

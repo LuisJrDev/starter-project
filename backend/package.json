@@ -9,6 +9,7 @@
   "scripts": {
     "emulators": "firebase emulators:start --only firestore,storage",
     "seed:emulator": "node scripts/seed.mjs --target=emulator",
+    "seed:production": "node scripts/seed.mjs --target=production",
     "test:rules": "node --test --test-reporter=spec --test-concurrency=1 \"test/**/*.test.mjs\""
   },
   "devDependencies": {

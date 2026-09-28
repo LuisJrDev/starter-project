@@ -4,7 +4,8 @@
 // same security rules as the mobile app, so a successful seed is also a smoke
 // test of `firestore.rules` and `storage.rules`.
 //
-// Usage: npm run seed:emulator   (requires `npm run emulators` in another shell)
+// Usage: npm run seed:emulator     (requires `npm run emulators` in another shell)
+//        npm run seed:production   (requires the rules to be deployed first)
 //
 // Schema: see ../docs/DB_SCHEMA.md
 
@@ -49,6 +50,18 @@ const TARGETS = {
     connectToEmulators(firestore, storage) {
       connectFirestoreEmulator(firestore, '127.0.0.1', 8080);
       connectStorageEmulator(storage, '127.0.0.1', 9199);
+    },
+  },
+  // Web app "news-backend-scripts". Firebase client config is a public identifier, not a secret:
+  // access is controlled by the security rules.
+  production: {
+    firebaseConfig: {
+      apiKey: 'AIzaSyDux56Xf6bZou5F3ottUk1Mm_qf_-rPovU',
+      authDomain: `${PROJECT_ID}.firebaseapp.com`,
+      projectId: PROJECT_ID,
+      storageBucket: `${PROJECT_ID}.firebasestorage.app`,
+      messagingSenderId: '995237750372',
+      appId: '1:995237750372:web:aa22fa99a35fe4bdc4e171',
     },
   },
 };
