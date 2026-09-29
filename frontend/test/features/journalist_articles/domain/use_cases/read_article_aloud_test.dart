@@ -4,8 +4,8 @@ import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_narration.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/published_article.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/repository/article_narrator_repository.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/read_article_aloud.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/stop_reading_aloud.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/read_article_aloud.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/stop_reading_aloud.dart';
 
 class MockArticleNarratorRepository extends Mock implements ArticleNarratorRepository {}
 

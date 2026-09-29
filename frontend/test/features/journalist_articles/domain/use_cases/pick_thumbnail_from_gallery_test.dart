@@ -3,7 +3,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_thumbnail.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/repository/thumbnail_picker_repository.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/pick_thumbnail_from_gallery.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/pick_thumbnail_from_gallery.dart';
 
 class MockThumbnailPickerRepository extends Mock implements ThumbnailPickerRepository {}
 

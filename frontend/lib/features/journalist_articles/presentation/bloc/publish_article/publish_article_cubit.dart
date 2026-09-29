@@ -5,11 +5,11 @@ import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 
 import '../../../domain/entities/article_draft.dart';
 import '../../../domain/entities/invalid_article_draft_exception.dart';
-import '../../../domain/usecases/discard_draft.dart';
-import '../../../domain/usecases/pick_thumbnail_from_gallery.dart';
-import '../../../domain/usecases/publish_article.dart';
-import '../../../domain/usecases/resume_draft.dart';
-import '../../../domain/usecases/save_draft.dart';
+import '../../../domain/use_cases/discard_draft.dart';
+import '../../../domain/use_cases/pick_thumbnail_from_gallery.dart';
+import '../../../domain/use_cases/publish_article.dart';
+import '../../../domain/use_cases/resume_draft.dart';
+import '../../../domain/use_cases/save_draft.dart';
 import 'publish_article_state.dart';
 
 class PublishArticleCubit extends Cubit<PublishArticleState> {

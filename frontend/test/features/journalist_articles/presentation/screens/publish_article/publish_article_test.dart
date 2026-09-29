@@ -7,13 +7,13 @@ import 'package:mocktail/mocktail.dart';
 import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_draft.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_thumbnail.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/discard_draft.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/pick_thumbnail_from_gallery.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/publish_article.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/resume_draft.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/save_draft.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/discard_draft.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/pick_thumbnail_from_gallery.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/publish_article.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/resume_draft.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/save_draft.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/publish_article/publish_article_cubit.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/presentation/pages/publish_article/publish_article.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/presentation/screens/publish_article/publish_article.dart';
 
 import '../../../../../helpers/localized_app.dart';
 

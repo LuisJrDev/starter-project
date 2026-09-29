@@ -3,8 +3,8 @@ import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 
 import '../../../domain/entities/article_narration_progress.dart';
 import '../../../domain/entities/published_article.dart';
-import '../../../domain/usecases/read_article_aloud.dart';
-import '../../../domain/usecases/stop_reading_aloud.dart';
+import '../../../domain/use_cases/read_article_aloud.dart';
+import '../../../domain/use_cases/stop_reading_aloud.dart';
 import 'article_narration_state.dart';
 
 class ArticleNarrationCubit extends Cubit<ArticleNarrationState> {

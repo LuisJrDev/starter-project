@@ -6,8 +6,8 @@ import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_narration.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_narration_progress.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/published_article.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/read_article_aloud.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/stop_reading_aloud.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/read_article_aloud.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/stop_reading_aloud.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/article_narration/article_narration_cubit.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/article_narration/article_narration_state.dart';
 

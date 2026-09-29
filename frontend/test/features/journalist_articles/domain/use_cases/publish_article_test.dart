@@ -7,7 +7,7 @@ import 'package:news_app_clean_architecture/features/journalist_articles/domain/
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/repository/article_draft_repository.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/repository/author_signature_repository.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/repository/published_article_repository.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/publish_article.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/publish_article.dart';
 
 class MockPublishedArticleRepository extends Mock implements PublishedArticleRepository {}
 

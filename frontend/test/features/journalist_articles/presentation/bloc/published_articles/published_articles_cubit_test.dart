@@ -5,7 +5,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/published_article.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/params/get_published_articles_params.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/get_published_articles.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/get_published_articles.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/published_articles/published_articles_cubit.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/published_articles/published_articles_state.dart';
 

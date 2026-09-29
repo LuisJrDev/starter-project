@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../domain/entities/published_article.dart';
 import '../../../domain/params/get_published_articles_params.dart';
-import '../../../domain/usecases/get_published_articles.dart';
+import '../../../domain/use_cases/get_published_articles.dart';
 import 'published_articles_state.dart';
 
 class PublishedArticlesCubit extends Cubit<PublishedArticlesState> {

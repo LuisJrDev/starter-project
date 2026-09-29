@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../../features/daily_news/domain/entities/article.dart';
-import '../../features/daily_news/presentation/pages/article_detail/article_detail.dart';
-import '../../features/daily_news/presentation/pages/home/daily_news.dart';
-import '../../features/daily_news/presentation/pages/saved_article/saved_article.dart';
+import '../../features/daily_news/presentation/screens/article_detail/article_detail.dart';
+import '../../features/daily_news/presentation/screens/home/daily_news.dart';
+import '../../features/daily_news/presentation/screens/saved_article/saved_article.dart';
 import '../../features/journalist_articles/domain/entities/published_article.dart';
-import '../../features/journalist_articles/presentation/pages/publish_article/publish_article.dart';
-import '../../features/journalist_articles/presentation/pages/published_article_detail/published_article_detail.dart';
+import '../../features/journalist_articles/presentation/screens/publish_article/publish_article.dart';
+import '../../features/journalist_articles/presentation/screens/published_article_detail/published_article_detail.dart';
 
 
 class AppRoutes {
