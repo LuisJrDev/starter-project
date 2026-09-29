@@ -6,7 +6,7 @@ Cloud Storage) y aparece para todos en la pestaña *Community* de la app.
 
 | | |
 |---|---|
-| Rama | `feature/publish-article` (57 commits, uno por paso) |
+| Rama | `feature/publish-article` (58 commits, uno por paso) |
 | Backend | [`backend/docs/DB_SCHEMA.md`](../backend/docs/DB_SCHEMA.md), [`firestore.rules`](../backend/firestore.rules), [`storage.rules`](../backend/storage.rules) |
 | Frontend | [`frontend/lib/features/journalist_articles/`](../frontend/lib/features/journalist_articles) |
 | Plataformas | Android e iOS (simulador iPhone 17), modo claro y oscuro, inglés y español |
@@ -18,16 +18,27 @@ Cloud Storage) y aparece para todos en la pestaña *Community* de la app.
 
 ## 1. Introducción
 
-Tengo **2 años de experiencia con Flutter**. **BLoC y Cubit** los uso a diario, así que la capa
-de presentación y la gestión de estado eran terreno conocido. **Firebase** lo había usado poco,
-sobre todo para notificaciones push. Por eso la parte nueva de verdad era el backend:
-modelar datos en Firestore, guardar archivos en Cloud Storage y, sobre todo, **hacer cumplir un
-esquema con reglas de seguridad** y probarlas.
+Soy un chico de **21 años de Barranquilla (Atlántico, Colombia)**: amable, responsable, curioso
+y detallista, de los que no dan algo por terminado hasta que funciona bien. Tengo **2 años de
+experiencia con Flutter** y uso **BLoC y Cubit** a diario, así que la capa de presentación y la
+gestión de estado eran terreno conocido. **Firebase** lo había usado poco, sobre todo para
+notificaciones push; la parte nueva de verdad era el backend: modelar datos en Firestore,
+guardar archivos en Cloud Storage y, sobre todo, **hacer cumplir un esquema con reglas de
+seguridad** y probarlas.
 
-Me propuse seguir el README al pie de la letra y en su orden: primero el esquema, después el
-backend y sus reglas, luego el dominio con datos simulados (*mock*), la UI y, por último, la capa
-de datos real. Trabajé en una rama propia y avancé por fases, revisando y aprobando cada una
-antes de pasar a la siguiente.
+Al leer la prueba me sentí **tranquilo y emocionado**. Me gustó que partiera de algo que ya
+funcionaba y que el reto fuera darle mi toque, así que me concentré en que todo quedara
+excelente y en sumar extras que hicieran resaltar la entrega.
+
+No me preocupaba no poder hacerla: confío en mis habilidades y en lo que sé. Me motivó verla como
+algo más que una prueba, como una forma de aprender. En un proyecto así uno se topa con desafíos
+y problemas que, de una forma u otra, tienen solución, y resolverlos enseña a afrontar los que
+seguramente vuelvan a aparecer en el futuro.
+
+Seguí las instrucciones del README al pie de la letra y en su orden: primero el esquema, después
+el backend y sus reglas, luego el dominio con datos simulados (*mock*), la interfaz y, por
+último, la capa de datos real. Trabajé en una rama propia, por fases pequeñas, y revisé cada
+fase antes de pasar a la siguiente.
 
 ## 2. Proceso de aprendizaje
 
@@ -308,7 +319,7 @@ suposiciones, y documentar también los errores y cómo se corrigieron.
 | `PublishArticleCubit` recibe 5 use cases y `PublishArticleUseCase` 3 repositorios | CG 3.5 limita los argumentos de las **funciones** para que sus tests sean simples. Estos son **constructores de inyección de dependencias**: cada argumento es una dependencia que el test sustituye por un mock, y agruparlos en un objeto solo escondería las dependencias. Todas las funciones y métodos tienen 2 argumentos o menos, salvo los dos `errorBuilder` de imágenes, cuya firma de 3 argumentos impone Flutter. |
 
 ### 7.3 Métricas
-- 57 commits en la rama, uno por paso.
+- 58 commits en la rama, uno por paso.
 - `journalist_articles`: 55 archivos y unas 3.100 líneas de Dart. Tests de Dart: unas 4.200 líneas. Textos: 56 en inglés y en español.
 - Reglas: 114 líneas, cubiertas por unas 400 líneas de tests.
 - CI completo: unos 8 minutos, de los que el job de Android es el más lento.
