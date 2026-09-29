@@ -5,6 +5,7 @@ import 'package:news_app_clean_architecture/features/journalist_articles/domain/
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/widgets/follow_along_text.dart';
 
 import '../../../../helpers/localized_app.dart';
+import '../../../../helpers/accessibility.dart';
 
 const narration = ArticleNarrationEntity(
   parts: [
@@ -66,4 +67,15 @@ void main() {
 
     expect(highlightedSentences(tester), ['That is all.']);
   });
+
+  testWidgets('keeps the sentence being read readable in every appearance', (tester) async {
+    await showInEveryAppearance(
+      tester,
+      const Scaffold(
+        body: FollowAlongText(progress: ArticleNarrationProgressEntity(narration: narration, sentenceIndex: 6)),
+      ),
+    );
+
+    await expectLater(tester, meetsGuideline(textContrastGuideline));
+  }, variant: appearances);
 }

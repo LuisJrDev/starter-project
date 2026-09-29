@@ -16,6 +16,7 @@ import 'package:news_app_clean_architecture/features/journalist_articles/present
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/screens/publish_article/publish_article.dart';
 
 import '../../../../../helpers/localized_app.dart';
+import '../../../../../helpers/accessibility.dart';
 
 const _contentHint = 'Add article here… Use the toolbar for **bold** text and ## subtitles.';
 const _contentHintInSpanish = 'Escribe aquí tu artículo… Usa la barra para texto en **negrita** y ## subtítulos.';
@@ -293,5 +294,35 @@ void main() {
     await tester.pump();
 
     expect(find.text('1 palabra · 1 min de lectura'), findsOneWidget);
+  });
+
+  group('accessibility', () {
+    Widget form() {
+      return BlocProvider(
+        create: (_) => PublishArticleCubit(publishArticle, pickThumbnail, resumeDraft, saveDraft, discardDraft)
+          ..resumeDraft(),
+        child: const PublishArticleForm(),
+      );
+    }
+
+    testWidgets('meets the guidelines', (tester) async {
+      await showInEveryAppearance(tester, form());
+
+      await expectAccessible(tester);
+    }, variant: appearances);
+
+    testWidgets('meets the guidelines while showing every field error', (tester) async {
+      await showInEveryAppearance(tester, form());
+      await tester.tap(find.byIcon(Icons.login)); // Publish Article
+      await pumpFrames(tester);
+
+      await expectAccessible(tester);
+    }, variant: appearances);
+
+    testWidgets('fits with the text at 200 %', (tester) async {
+      await showInEveryAppearance(tester, form(), textScale: 2);
+
+      expect(tester.takeException(), isNull);
+    }, variant: appearances);
   });
 }

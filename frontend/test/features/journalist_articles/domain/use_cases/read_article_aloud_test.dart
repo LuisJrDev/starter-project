@@ -1,11 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_narration.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/published_article.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/repository/article_narrator_repository.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/read_article_aloud.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/use_cases/stop_reading_aloud.dart';
 
 class MockArticleNarratorRepository extends Mock implements ArticleNarratorRepository {}
 
@@ -27,7 +25,6 @@ void main() {
   setUp(() {
     repository = MockArticleNarratorRepository();
     when(() => repository.read(any())).thenAnswer((_) => const Stream.empty());
-    when(() => repository.stopReading()).thenAnswer((_) async => const DataSuccess(null));
   });
 
   test('reads the narration of the article', () async {
@@ -40,11 +37,5 @@ void main() {
     expect(await ReadArticleAloudUseCase(repository)().toList(), isEmpty);
 
     verifyNever(() => repository.read(any()));
-  });
-
-  test('stops reading', () async {
-    await StopReadingAloudUseCase(repository)();
-
-    verify(() => repository.stopReading()).called(1);
   });
 }

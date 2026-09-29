@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:news_app_clean_architecture/features/daily_news/domain/entities/article.dart';
 import 'package:news_app_clean_architecture/features/daily_news/presentation/widgets/article_tile.dart';
 
+import '../../../../helpers/accessibility.dart';
 import '../../../../helpers/localized_app.dart';
 
 const article = ArticleEntity(
@@ -43,4 +44,16 @@ void main() {
 
     expect(removed, article);
   });
+
+  testWidgets('fits with the text at 200 %', (tester) async {
+    const longArticle = ArticleEntity(
+      title: 'Nvidia announces a jaw-dropping stock buyback, the largest in its history',
+      description: 'The valuation on Nvidia is too appetizing for its chief executive',
+      urlToImage: 'https://example.com/nvidia.jpg',
+      publishedAt: '2026-09-28T12:13:42Z',
+    );
+    await showInEveryAppearance(tester, const Scaffold(body: ArticleWidget(article: longArticle)), textScale: 2);
+
+    expect(tester.takeException(), isNull);
+  }, variant: appearances);
 }

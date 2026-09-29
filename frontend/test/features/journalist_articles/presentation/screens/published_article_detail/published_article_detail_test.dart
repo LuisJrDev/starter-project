@@ -15,6 +15,7 @@ import 'package:news_app_clean_architecture/features/journalist_articles/present
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/widgets/follow_along_text.dart';
 
 import '../../../../../helpers/localized_app.dart';
+import '../../../../../helpers/accessibility.dart';
 
 class MockReadArticleAloudUseCase extends Mock implements ReadArticleAloudUseCase {}
 
@@ -160,5 +161,28 @@ void main() {
     await tester.tap(find.text('Escuchar este artículo'));
     await tester.pump();
     expect(find.text('Detener la lectura'), findsOneWidget);
+  });
+
+  group('accessibility', () {
+    Widget articleScreen() {
+      stubReadingAloud();
+      return BlocProvider(
+        create: (_) => ArticleNarrationCubit(readAloud, stopReading),
+        child: PublishedArticleDetail(article: article),
+      );
+    }
+
+    // No contrast check: the thumbnail is a network image (see expectAccessible).
+    testWidgets('has usable, labeled buttons', (tester) async {
+      await showInEveryAppearance(tester, articleScreen());
+
+      await expectUsableTapTargets(tester);
+    }, variant: appearances);
+
+    testWidgets('fits with the text at 200 %', (tester) async {
+      await showInEveryAppearance(tester, articleScreen(), textScale: 2);
+
+      expect(tester.takeException(), isNull);
+    }, variant: appearances);
   });
 }
