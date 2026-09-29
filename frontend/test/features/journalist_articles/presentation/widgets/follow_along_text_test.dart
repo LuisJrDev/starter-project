@@ -4,6 +4,8 @@ import 'package:news_app_clean_architecture/features/journalist_articles/domain/
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_narration_progress.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/widgets/follow_along_text.dart';
 
+import '../../../../helpers/localized_app.dart';
+
 const narration = ArticleNarrationEntity(
   parts: [
     NarrationPart(NarrationPartKind.title, ['Title']),
@@ -19,7 +21,7 @@ const narration = ArticleNarrationEntity(
 
 void main() {
   Future<void> showReading(WidgetTester tester, int sentenceIndex) {
-    return tester.pumpWidget(MaterialApp(
+    return tester.pumpWidget(localizedApp(
       home: Scaffold(
         body: SingleChildScrollView(
           child: FollowAlongText(

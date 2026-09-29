@@ -15,6 +15,8 @@ import 'package:news_app_clean_architecture/features/journalist_articles/domain/
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/publish_article/publish_article_cubit.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/pages/publish_article/publish_article.dart';
 
+import '../../../../../helpers/localized_app.dart';
+
 const _contentHint = 'Add article here… Use the toolbar for **bold** text and ## subtitles.';
 
 class MockPublishArticleUseCase extends Mock implements PublishArticleUseCase {}
@@ -55,13 +57,14 @@ void main() {
   });
 
   /// Opens the publish form from a home screen and returns what the form popped with.
-  Future<Future<Object?>> openPublishForm(WidgetTester tester) async {
+  Future<Future<Object?>> openPublishForm(WidgetTester tester, {Locale locale = const Locale('en')}) async {
     // A phone-sized surface, so the whole form is built without scrolling.
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     late Future<Object?> result;
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(localizedApp(
+      locale: locale,
       home: Builder(
         builder: (context) => TextButton(
           onPressed: () => result = Navigator.push(
@@ -257,5 +260,18 @@ void main() {
 
     expect(find.byType(PublishArticleForm), findsOneWidget);
     expect(find.widgetWithText(TextField, 'Draft'), findsOneWidget);
+  });
+
+  testWidgets('speaks Spanish on a phone in Spanish', (tester) async {
+    await openPublishForm(tester, locale: const Locale('es'));
+
+    await tester.tap(find.text('Publicar artículo').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Título'), findsOneWidget);
+    expect(find.text('Escrito por'), findsOneWidget);
+    expect(find.text('Adjuntar imagen'), findsOneWidget);
+    expect(find.text('Añade un título a tu artículo.'), findsOneWidget);
+    expect(find.text('Adjunta una imagen para ilustrar tu artículo.'), findsOneWidget);
   });
 }

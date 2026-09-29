@@ -85,6 +85,9 @@ void main() {
 
   testWidgets('a journalist publishes an article and finds it in the Community tab', (tester) async {
     final title = 'Integration test ${DateTime.now().millisecondsSinceEpoch}';
+    // The journey looks for the English texts, whatever the language of the device.
+    tester.platformDispatcher.localesTestValue = const [Locale('en', 'US')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
     await tester.pumpWidget(const MyApp());
     await _pumpUntilFound(tester, find.text('Community'));
 

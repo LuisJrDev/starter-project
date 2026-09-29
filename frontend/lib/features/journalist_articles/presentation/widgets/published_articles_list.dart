@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../l10n/l10n.dart';
 import '../../domain/entities/published_article.dart';
 import '../bloc/published_articles/published_articles_cubit.dart';
 import '../bloc/published_articles/published_articles_state.dart';
@@ -22,14 +23,14 @@ class PublishedArticlesList extends StatelessWidget {
         PublishedArticlesLoading() => const Center(child: CupertinoActivityIndicator()),
         PublishedArticlesError() => _MessageView(
             icon: Icons.cloud_off,
-            message: 'The articles could not be loaded.',
-            actionLabel: 'Try again',
+            message: context.l10n.articlesCouldNotLoad,
+            actionLabel: context.l10n.tryAgain,
             onAction: context.read<PublishedArticlesCubit>().loadArticles,
           ),
         PublishedArticlesLoaded(articles: final articles) when articles.isEmpty => _MessageView(
             icon: Icons.edit_note,
-            message: 'No articles yet. Be the first journalist to publish one!',
-            actionLabel: 'Write an article',
+            message: context.l10n.noArticlesYet,
+            actionLabel: context.l10n.writeAnArticle,
             onAction: onPublishPressed,
           ),
         PublishedArticlesLoaded() => _ArticlesListView(state: state, onArticlePressed: onArticlePressed),

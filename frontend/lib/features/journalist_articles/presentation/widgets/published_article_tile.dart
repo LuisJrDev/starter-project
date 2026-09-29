@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import 'package:news_app_clean_architecture/config/theme/app_themes.dart';
 
+import '../../../../l10n/l10n.dart';
 import '../../domain/entities/published_article.dart';
 
 String publishedArticleHeroTag(PublishedArticleEntity article) => 'published-article-${article.id}';
@@ -86,8 +87,8 @@ class PublishedArticleByline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final date = DateFormat.yMMMd().format(article.publishedAt.toLocal());
-    final readingTime = showsReadingTime ? ' · ${article.readingTimeInMinutes} min read' : '';
+    final date = DateFormat.yMMMd(Localizations.localeOf(context).toString()).format(article.publishedAt.toLocal());
+    final readingTime = showsReadingTime ? ' · ${context.l10n.readingTime(article.readingTimeInMinutes)}' : '';
     return Row(
       children: [
         const Icon(Icons.edit_note, size: 18),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/l10n.dart';
+
 /// Full-width "Publish Article" button pinned to the bottom of the publish screen.
 class PublishArticleButton extends StatelessWidget {
   final bool isPublishing;
@@ -16,7 +18,7 @@ class PublishArticleButton extends StatelessWidget {
         child: FilledButton.tonalIcon(
           onPressed: isPublishing ? null : onPressed,
           icon: isPublishing ? _buildProgressIndicator() : const Icon(Icons.login, size: 26),
-          label: Text(isPublishing ? 'Publishing…' : 'Publish Article'),
+          label: Text(isPublishing ? context.l10n.publishing : context.l10n.publishArticle),
           style: FilledButton.styleFrom(
             minimumSize: const Size.fromHeight(64),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),

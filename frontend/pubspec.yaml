@@ -11,6 +11,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  #texts of the app in English and Spanish, following the phone's language
+  flutter_localizations:
+    sdk: flutter
 
   cupertino_icons: ^1.0.2
 
@@ -27,7 +30,7 @@ dependencies:
   get_it: ^7.6.0
   
   #dateFormat
-  intl: ^0.18.1
+  intl: ^0.19.0
 
   #Database
   floor: any
@@ -86,6 +89,8 @@ dev_dependencies:
 flutter:
 
   uses-material-design: true
+  # Generates AppLocalizations from lib/l10n/*.arb (see l10n.yaml).
+  generate: true
 
  
   fonts:

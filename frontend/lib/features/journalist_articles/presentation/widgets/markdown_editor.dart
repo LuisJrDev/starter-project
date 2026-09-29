@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
+import '../../../../l10n/l10n.dart';
+
 import 'length_counter.dart';
 import 'markdown_formatting.dart';
 
@@ -43,9 +45,9 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
 
   Widget _buildModeSelector() {
     return SegmentedButton<bool>(
-      segments: const [
-        ButtonSegment(value: false, label: Text('Write'), icon: Icon(Icons.edit_outlined)),
-        ButtonSegment(value: true, label: Text('Preview'), icon: Icon(Icons.visibility_outlined)),
+      segments: [
+        ButtonSegment(value: false, label: Text(context.l10n.write), icon: const Icon(Icons.edit_outlined)),
+        ButtonSegment(value: true, label: Text(context.l10n.preview), icon: const Icon(Icons.visibility_outlined)),
       ],
       selected: {_isPreviewing},
       onSelectionChanged: (selection) => setState(() => _isPreviewing = selection.single),
@@ -55,14 +57,15 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
 
   Widget _buildFormattingToolbar() {
     final isEnabled = widget.enabled;
+    final texts = context.l10n;
     return Row(
       children: [
-        _FormatButton(icon: Icons.format_bold, tooltip: 'Bold', onPressed: isEnabled ? () => _wrap('**') : null),
-        _FormatButton(icon: Icons.format_italic, tooltip: 'Italic', onPressed: isEnabled ? () => _wrap('*') : null),
-        _FormatButton(icon: Icons.title, tooltip: 'Subtitle', onPressed: isEnabled ? () => _prefix('## ') : null),
+        _FormatButton(icon: Icons.format_bold, tooltip: texts.bold, onPressed: isEnabled ? () => _wrap('**') : null),
+        _FormatButton(icon: Icons.format_italic, tooltip: texts.italic, onPressed: isEnabled ? () => _wrap('*') : null),
+        _FormatButton(icon: Icons.title, tooltip: texts.subtitle, onPressed: isEnabled ? () => _prefix('## ') : null),
         _FormatButton(
           icon: Icons.format_list_bulleted,
-          tooltip: 'Bulleted list',
+          tooltip: texts.bulletedList,
           onPressed: isEnabled ? () => _prefix('- ') : null,
         ),
       ],
@@ -80,7 +83,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       textCapitalization: TextCapitalization.sentences,
       style: const TextStyle(fontSize: 16, height: 1.5),
       decoration: InputDecoration(
-        hintText: 'Add article here… Use the toolbar for **bold** text and ## subtitles.',
+        hintText: context.l10n.contentHint,
         errorText: widget.errorText,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         counter: LengthCounter(controller: widget.controller, maxLength: widget.maxLength),
@@ -97,7 +100,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
         border: Border.all(color: Theme.of(context).colorScheme.outline),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: MarkdownBody(data: text.isEmpty ? '*Nothing to preview yet.*' : text),
+      child: MarkdownBody(data: text.isEmpty ? context.l10n.nothingToPreview : text),
     );
   }
 

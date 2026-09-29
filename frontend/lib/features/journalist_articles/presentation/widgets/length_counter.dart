@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/l10n.dart';
+
 /// Live `12/100` counter for a text field. It counts UTF-16 code units ([String.length]), the
 /// unit the backend rules use, so an emoji counts as 2. Flutter's built-in `maxLength` counts
 /// emoji as 1 and would accept titles the backend rejects.
@@ -22,7 +24,7 @@ class LengthCounter extends StatelessWidget {
     final isOverLimit = length > maxLength;
     return Text(
       '$length/$maxLength',
-      semanticsLabel: '$length of $maxLength characters used',
+      semanticsLabel: context.l10n.charactersUsed(length, maxLength),
       style: TextStyle(
         fontSize: 13,
         fontWeight: isOverLimit ? FontWeight.bold : FontWeight.normal,

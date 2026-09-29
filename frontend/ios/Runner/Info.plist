@@ -6,6 +6,11 @@
 	<string>Choose a photo from your library to illustrate the article you are publishing.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>es</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>News App Clean Architecture</string>
 	<key>CFBundleExecutable</key>

@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:news_app_clean_architecture/config/routes/routes.dart';
+import 'package:news_app_clean_architecture/l10n/l10n.dart';
 import 'package:news_app_clean_architecture/features/daily_news/presentation/bloc/article/remote/remote_article_bloc.dart';
 import 'package:news_app_clean_architecture/features/daily_news/presentation/bloc/article/remote/remote_article_event.dart';
 import 'package:news_app_clean_architecture/features/daily_news/presentation/bloc/article/remote/remote_article_state.dart';
@@ -34,7 +35,7 @@ class DailyNews extends StatelessWidget {
             ],
           ),
           floatingActionButton: FloatingActionButton(
-            tooltip: 'Publish an article',
+            tooltip: context.l10n.publishAnArticle,
             onPressed: () => _onPublishArticlePressed(context),
             child: const Icon(Icons.add),
           ),
@@ -48,15 +49,15 @@ class DailyNews extends StatelessWidget {
       title: const Text('Daily News'),
       actions: [
         IconButton(
-          tooltip: 'Saved articles',
+          tooltip: context.l10n.savedArticles,
           onPressed: () => _onShowSavedArticlesViewTapped(context),
           icon: const Icon(Icons.bookmark),
         ),
       ],
-      bottom: const TabBar(
+      bottom: TabBar(
         tabs: [
-          Tab(icon: Icon(Icons.public), text: 'Top news'),
-          Tab(icon: Icon(Icons.edit_note), text: 'Community'),
+          Tab(icon: const Icon(Icons.public), text: context.l10n.topNewsTab),
+          Tab(icon: const Icon(Icons.edit_note), text: context.l10n.communityTab),
         ],
       ),
     );
@@ -71,7 +72,7 @@ class DailyNews extends StatelessWidget {
         if (state is RemoteArticlesError) {
           return Center(
             child: IconButton(
-              tooltip: 'Try again',
+              tooltip: context.l10n.tryAgain,
               iconSize: 36,
               icon: const Icon(Icons.refresh),
               onPressed: () => context.read<RemoteArticlesBloc>().add(const GetArticles()),
@@ -115,7 +116,7 @@ class DailyNews extends StatelessWidget {
     DefaultTabController.of(context).animateTo(_communityTabIndex);
     context.read<PublishedArticlesCubit>().loadArticles();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Your article has been published.')),
+      SnackBar(content: Text(context.l10n.articlePublished)),
     );
   }
 }

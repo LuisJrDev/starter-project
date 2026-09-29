@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/widgets/add_thumbnail.dart';
 
-Widget inApp(Widget child) => MaterialApp(home: Scaffold(body: child));
+import '../../../../helpers/localized_app.dart';
+
+Widget inApp(Widget child) => localizedApp(home: Scaffold(body: child));
 
 void main() {
   group('without an image', () {

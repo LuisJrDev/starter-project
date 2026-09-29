@@ -4,6 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:ionicons/ionicons.dart';
 
 import '../../../../../injection_container.dart';
+import '../../../../../l10n/l10n.dart';
 import '../../../domain/entities/article_draft.dart';
 import '../../bloc/publish_article/publish_article_cubit.dart';
 import '../../bloc/publish_article/publish_article_state.dart';
@@ -46,10 +47,11 @@ class _FormControllers {
 /// What every form field needs from the current state.
 class _FormBinding {
   final PublishArticleCubit cubit;
+  final AppLocalizations texts;
   final ArticleDraftErrorMessages errors;
   final bool isEditable;
 
-  const _FormBinding({required this.cubit, required this.errors, required this.isEditable});
+  const _FormBinding({required this.cubit, required this.texts, required this.errors, required this.isEditable});
 }
 
 /// The publish form. Expects a [PublishArticleCubit] above it.
@@ -86,11 +88,11 @@ class PublishArticleForm extends HookWidget {
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     return AppBar(
       leading: IconButton(
-        tooltip: 'Back',
+        tooltip: context.l10n.back,
         icon: const Icon(Ionicons.chevron_back),
         onPressed: () => Navigator.maybePop(context),
       ),
-      title: const Text('Publish Article'),
+      title: Text(context.l10n.publishArticle),
     );
   }
 
@@ -98,7 +100,8 @@ class PublishArticleForm extends HookWidget {
     return Builder(builder: (context) {
       final binding = _FormBinding(
         cubit: context.read<PublishArticleCubit>(),
-        errors: ArticleDraftErrorMessages(state.visibleErrors),
+        texts: context.l10n,
+        errors: ArticleDraftErrorMessages(state.visibleErrors, context.l10n),
         isEditable: state is! PublishArticlePublishing,
       );
       return ListView(
@@ -119,8 +122,8 @@ class PublishArticleForm extends HookWidget {
   Widget _buildTitleField(_FormBinding binding, TextEditingController controller) {
     return LimitedTextField(
       controller: controller,
-      label: 'Title',
-      hintText: 'Write your title here…',
+      label: binding.texts.titleLabel,
+      hintText: binding.texts.titleHint,
       maxLength: ArticleDraftEntity.titleMaxLength,
       maxLines: null,
       style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
@@ -133,8 +136,8 @@ class PublishArticleForm extends HookWidget {
   Widget _buildAuthorField(_FormBinding binding, TextEditingController controller) {
     return LimitedTextField(
       controller: controller,
-      label: 'Written by',
-      hintText: 'Your name',
+      label: binding.texts.authorLabel,
+      hintText: binding.texts.authorHint,
       maxLength: ArticleDraftEntity.authorMaxLength,
       errorText: binding.errors.author,
       enabled: binding.isEditable,
@@ -176,8 +179,8 @@ class PublishArticleForm extends HookWidget {
   void _offerStartingOver(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       duration: const Duration(seconds: 6),
-      content: const Text('We restored the article you left unfinished.'),
-      action: SnackBarAction(label: 'Start over', onPressed: context.read<PublishArticleCubit>().startOver),
+      content: Text(context.l10n.draftRestored),
+      action: SnackBarAction(label: context.l10n.startOver, onPressed: context.read<PublishArticleCubit>().startOver),
     ));
   }
 
@@ -198,11 +201,9 @@ class PublishArticleForm extends HookWidget {
       ..showSnackBar(SnackBar(
         // Long enough to read the message and decide to retry.
         duration: const Duration(seconds: 10),
-        content: Text(isPublishFailure
-            ? 'Your article could not be published. Check your connection and try again.'
-            : 'The gallery could not be opened. Check the app permissions and try again.'),
+        content: Text(isPublishFailure ? context.l10n.publishFailed : context.l10n.galleryUnavailable),
         action: isPublishFailure
-            ? SnackBarAction(label: 'Retry', onPressed: context.read<PublishArticleCubit>().publish)
+            ? SnackBarAction(label: context.l10n.retry, onPressed: context.read<PublishArticleCubit>().publish)
             : null,
       ));
   }
@@ -221,20 +222,20 @@ class PublishArticleForm extends HookWidget {
     final choice = await showDialog<_LeaveChoice>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Save this article as a draft?'),
-        content: const Text('You can finish it the next time you tap +.'),
+        title: Text(context.l10n.saveDraftQuestion),
+        content: Text(context.l10n.saveDraftExplanation),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, _LeaveChoice.keepWriting),
-            child: const Text('Keep writing'),
+            child: Text(context.l10n.keepWriting),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, _LeaveChoice.discardDraft),
-            child: const Text('Discard'),
+            child: Text(context.l10n.discard),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, _LeaveChoice.saveDraft),
-            child: const Text('Save draft'),
+            child: Text(context.l10n.saveDraft),
           ),
         ],
       ),

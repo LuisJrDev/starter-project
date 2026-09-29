@@ -5,6 +5,7 @@ import 'package:news_app_clean_architecture/features/daily_news/presentation/blo
 import 'package:news_app_clean_architecture/features/daily_news/presentation/pages/home/daily_news.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/published_articles/published_articles_cubit.dart';
 import 'config/theme/app_themes.dart';
+import 'l10n/l10n.dart';
 import 'features/daily_news/presentation/bloc/article/remote/remote_article_bloc.dart';
 import 'injection_container.dart';
 
@@ -29,6 +30,8 @@ class MyApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: theme(),
           darkTheme: darkTheme(),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           onGenerateRoute: AppRoutes.onGenerateRoutes,
           home: const DailyNews()),
     );

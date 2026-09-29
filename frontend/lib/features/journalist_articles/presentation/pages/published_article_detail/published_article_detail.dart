@@ -5,6 +5,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:ionicons/ionicons.dart';
 
 import '../../../../../injection_container.dart';
+import '../../../../../l10n/l10n.dart';
 import '../../../domain/entities/article_narration_progress.dart';
 import '../../../domain/entities/published_article.dart';
 import '../../bloc/article_narration/article_narration_cubit.dart';
@@ -39,7 +40,7 @@ class PublishedArticleDetail extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: context.l10n.back,
           icon: const Icon(Ionicons.chevron_back),
           onPressed: () => Navigator.pop(context),
         ),
@@ -94,11 +95,11 @@ class PublishedArticleDetail extends StatelessWidget {
       child: TweenAnimationBuilder<double>(
         tween: Tween(end: progress.fractionRead),
         duration: const Duration(milliseconds: 300),
-        builder: (_, fractionRead, __) => LinearProgressIndicator(
+        builder: (context, fractionRead, __) => LinearProgressIndicator(
           value: fractionRead,
           minHeight: 4,
           borderRadius: BorderRadius.circular(2),
-          semanticsLabel: 'Reading progress',
+          semanticsLabel: context.l10n.readingProgress,
         ),
       ),
     );
@@ -106,9 +107,9 @@ class PublishedArticleDetail extends StatelessWidget {
 
   void _showWhenUnavailable(BuildContext context, ArticleNarrationState state) {
     if (state is! ArticleNarrationUnavailable) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-      duration: Duration(seconds: 8),
-      content: Text('This device cannot read aloud. Check the text-to-speech settings of your phone.'),
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      duration: const Duration(seconds: 8),
+      content: Text(context.l10n.cannotReadAloud),
     ));
   }
 

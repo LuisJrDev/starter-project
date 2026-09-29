@@ -14,6 +14,8 @@ import 'package:news_app_clean_architecture/features/journalist_articles/present
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/pages/published_article_detail/published_article_detail.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/widgets/follow_along_text.dart';
 
+import '../../../../../helpers/localized_app.dart';
+
 class MockReadArticleAloudUseCase extends Mock implements ReadArticleAloudUseCase {}
 
 class MockStopReadingAloudUseCase extends Mock implements StopReadingAloudUseCase {}
@@ -48,12 +50,13 @@ void main() {
     });
   }
 
-  Future<void> openArticle(WidgetTester tester) async {
+  Future<void> openArticle(WidgetTester tester, {Locale locale = const Locale('en')}) async {
     stubReadingAloud();
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(MaterialApp(
+    await tester.pumpWidget(localizedApp(
+      locale: locale,
       home: BlocProvider(
         create: (_) => ArticleNarrationCubit(readAloud, stopReading),
         child: PublishedArticleDetail(article: article),
@@ -146,5 +149,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500)); // snackbar entrance
 
     expect(find.textContaining('cannot read aloud'), findsOneWidget);
+  });
+
+  testWidgets('shows the date, the reading time and the buttons in Spanish', (tester) async {
+    await openArticle(tester, locale: const Locale('es'));
+
+    expect(find.textContaining('sept 2026 · 1 min de lectura'), findsOneWidget);
+    expect(find.text('Escuchar este artículo'), findsOneWidget);
+
+    await tester.tap(find.text('Escuchar este artículo'));
+    await tester.pump();
+    expect(find.text('Detener la lectura'), findsOneWidget);
   });
 }

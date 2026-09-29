@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/l10n.dart';
+
 /// The "Add Thumbnail" component of the design, with two states:
 /// an "Attach Image" button, or the picked image at full width (tap it to change it).
 class AddThumbnail extends StatelessWidget {
@@ -59,7 +61,7 @@ class _AttachImageButton extends StatelessWidget {
       child: FilledButton.tonalIcon(
         onPressed: onPressed,
         icon: const Icon(Icons.add_photo_alternate_outlined),
-        label: const Text('Attach Image'),
+        label: Text(context.l10n.attachImage),
         style: FilledButton.styleFrom(
           minimumSize: const Size(0, 52),
           padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -80,7 +82,7 @@ class _ThumbnailPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Article image. Double tap to choose another one.',
+      label: context.l10n.articleImageHint,
       child: InkWell(
         onTap: onTap,
         child: AspectRatio(
@@ -112,14 +114,17 @@ class _ChangeImageChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), borderRadius: BorderRadius.circular(20)),
-      child: const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.photo_library_outlined, color: Colors.white, size: 18),
-            SizedBox(width: 6),
-            Text('Change image', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+            const Icon(Icons.photo_library_outlined, color: Colors.white, size: 18),
+            const SizedBox(width: 6),
+            Text(
+              context.l10n.changeImage,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
           ],
         ),
       ),
