@@ -6,13 +6,13 @@ Cloud Storage) y aparece para todos en la pestaña *Community* de la app.
 
 | | |
 |---|---|
-| Rama | `feature/publish-article` (53 commits, uno por paso) |
+| Rama | `feature/publish-article` (56 commits, uno por paso) |
 | Backend | [`backend/docs/DB_SCHEMA.md`](../backend/docs/DB_SCHEMA.md), [`firestore.rules`](../backend/firestore.rules), [`storage.rules`](../backend/storage.rules) |
 | Frontend | [`frontend/lib/features/journalist_articles/`](../frontend/lib/features/journalist_articles) |
 | Plataformas | Android e iOS (simulador iPhone 17), modo claro y oscuro, inglés y español |
-| Tests | 352 unitarios y de widgets (44 de accesibilidad), 66 de reglas de seguridad y 1 de integración de extremo a extremo |
+| Tests | 355 unitarios y de widgets (44 de accesibilidad), 66 de reglas de seguridad y 1 de integración de extremo a extremo |
 | CI | [GitHub Actions](../.github/workflows/ci.yml), los tres jobs en verde |
-| Vídeo | [`docs/media/publish-journey.mp4`](./media/publish-journey.mp4) (40 s) |
+| Vídeo | [`docs/media/demo.mp4`](./media/demo.mp4): demo completa de 3 min 33 s con subtítulos |
 
 ---
 
@@ -71,6 +71,7 @@ Estos son los problemas reales que aparecieron, cómo se resolvieron y qué apre
 | **iOS no compilaba con Xcode 26** usando los plugins de Firebase 2.x: gRPC-Core 1.62 no compila, las librerías estáticas se buscaban como dinámicas, y un include de `firebase_storage` y unos pods que declaraban iOS 10 fallaban. | Firestore precompilado (lo recomienda FlutterFire), enlace estático de los pods, includes permitidos e iOS 13 como versión mínima. Un último fallo al arrancar venía de restos del primer build en `DerivedData`. | Leer el informe de fallo (`.ips`) y el binario (`otool`) en lugar de probar a ciegas. |
 | **El borrador perdía la foto al actualizar la app en iOS.** Guardaba la ruta completa de la copia de la miniatura, y iOS cambia la ruta de la carpeta de la app con cada instalación o actualización (`…/Application/B9CE39C3…/` pasó a `…/76DE8D23…/`). | Se guarda solo el nombre del archivo, y la ruta se reconstruye al leer. Un test mueve la carpeta, y en el simulador el borrador vuelve completo tras reinstalar. | Probar el ciclo de vida real (matar, reinstalar), no solo el camino feliz dentro de una sesión. |
 | **Los tests de accesibilidad encontraron tres fallos.** (1) `MarkdownBody(selectable: true)` hacía que VoiceOver y TalkBack anunciaran cada párrafo del artículo como un campo de texto, y contaba cada uno como un botón diminuto. (2) Las tarjetas de las listas tenían una altura fija y, con la letra grande del sistema, el texto se salía. (3) La fecha de *Top news* no podía encogerse y se salía por la derecha. | (1) `SelectionArea`, que mantiene el texto seleccionable (ahora a lo largo de todo el artículo) y lo lee como texto. (2) La altura de la tarjeta crece con el tamaño de letra del usuario; al 100 % no cambia nada. (3) La fecha se recorta con puntos suspensivos. Comprobado en el simulador con la letra de accesibilidad grande. | "Accesible" no se puede afirmar a ojo: las guías automáticas encuentran lo que una revisión visual no ve. |
+| **Con el servidor colgado, publicar esperaba para siempre.** Al grabar la demo con los emuladores congelados, la subida de la foto no fallaba a los 30 s: `setMaxUploadRetryTime` solo limita los reintentos tras un error, no una petición que el servidor acepta y nunca responde (un backend colgado o una red malísima). | Cada operación de Storage tiene un límite propio (30 s la subida, que además se cancela, y 15 s la URL y la limpieza) y lanza `TimeoutException`, así que llega el aviso con *Retry*. Tests con una subida que nunca responde. | Probar el fallo tal y como ocurre en la realidad: "sin red" y "servidor que no responde" son dos fallos distintos. |
 | **GitHub marcó las claves de Firebase como secretos.** | Son identificadores públicos que van dentro de cada APK. Comprobé que están restringidas a las APIs de Firebase y lo documenté en [Security](../backend/README.md#security). | Entender una alerta antes de "arreglarla": aquí la defensa real son las reglas y las restricciones de la clave, no esconder la clave. |
 
 ## 4. Reflexión y próximos pasos
@@ -102,11 +103,36 @@ de avanzar y verificarlo todo en el dispositivo y en el CI me dio confianza en l
 
 ## 5. Pruebas del proyecto
 
-### Vídeo
-[`docs/media/publish-journey.mp4`](./media/publish-journey.mp4): el test de integración
-ejecutándose a cámara lenta en un emulador Android, contra el emulador de Firebase. Recorre la
-validación, la escritura, la imagen, la publicación, el artículo en *Community* y el detalle con
-Markdown.
+### Vídeo: demo completa (3 min 33 s)
+[`docs/media/demo.mp4`](./media/demo.mp4): la app entera en un iPhone (simulador), con subtítulos
+en español que explican cada paso. Corre contra Firebase Emulator Suite con las reglas de
+seguridad reales, así que publica de verdad sin tocar producción. En orden:
+
+1. *Top news* y la pestaña *Community*, con deslizar para actualizar.
+2. Publicar vacío: cada campo explica qué falta.
+3. Título con contador (el emoji cuenta 2, como las reglas) y firma.
+4. Foto real de una NIKON D90 con GPS: el vídeo comprueba en ese momento que la foto original
+   tiene EXIF y la que se sube no.
+5. Editor Markdown: subtítulo, negrita y lista desde la barra, palabras y tiempo de lectura en
+   vivo, y vista previa.
+6. Publicar, con el botón de progreso, y el artículo el primero en *Community*.
+7. El artículo con Markdown, y escucharlo con la frase que suena resaltada y seguida.
+8. Firma recordada, borrador guardado solo, diálogo al salir y borrador recuperado al volver a
+   abrir la app.
+9. **Sin conexión de verdad**: el script de grabación congela los emuladores (`SIGSTOP`), la app
+   se rinde a los 30 s con *Retry*, vuelve la conexión y se publica al reintentar. El borrador se
+   borra.
+10. Modo oscuro, español y letra grande, cambiados en vivo, y texto seleccionable con el menú en
+    español.
+
+La hoja de fotos del sistema es lo único simulado: la foto pasa por la ruta real de la app,
+incluida la eliminación de metadatos. El simulador no graba audio, así que la voz no se oye. Se
+regenera con un comando ([`frontend/tool/record_demo_video.sh`](../frontend/tool/record_demo_video.sh)),
+que ejecuta el guion ([`integration_test/demo_video_test.dart`](../frontend/integration_test/demo_video_test.dart)),
+graba la pantalla y la comprime a 720 px.
+
+[`docs/media/publish-journey.mp4`](./media/publish-journey.mp4) (40 s) es el test de integración del
+recorrido de publicar, a cámara lenta en un emulador Android.
 
 ### Capturas
 
@@ -196,7 +222,7 @@ devolvieron `403`.
 - **Modo emulador** en la app y **script de seed** que publica pasando por las reglas.
 
 ### 6.2 Calidad y *Boy Scout rule* (CG1)
-- **Tests**: 352 unitarios y de widgets (entidades, use cases, modelo, data sources con Firebase
+- **Tests**: 355 unitarios y de widgets (entidades, use cases, modelo, data sources con Firebase
   simulado, repositorios, cubits, widgets, pantalla completa y 44 de accesibilidad), 66 de reglas y 1 de integración
   de extremo a extremo (CG 4.2). La mayoría del dominio se escribió primero el test (TDD).
   `test/` refleja `lib/` archivo por archivo, como pide `APP_ARCHITECTURE.md`: en
@@ -274,7 +300,7 @@ suposiciones, y documentar también los errores y cómo se corrigieron.
 | `PublishArticleCubit` recibe 5 use cases y `PublishArticleUseCase` 3 repositorios | CG 3.5 limita los argumentos de las **funciones** para que sus tests sean simples. Estos son **constructores de inyección de dependencias**: cada argumento es una dependencia que el test sustituye por un mock, y agruparlos en un objeto solo escondería las dependencias. Todas las funciones y métodos tienen 2 argumentos o menos, salvo los dos `errorBuilder` de imágenes, cuya firma de 3 argumentos impone Flutter. |
 
 ### 7.3 Métricas
-- 53 commits en la rama, uno por paso.
+- 56 commits en la rama, uno por paso.
 - `journalist_articles`: 55 archivos y unas 3.100 líneas de Dart. Tests de Dart: unas 4.200 líneas. Textos: 56 en inglés y en español.
 - Reglas: 114 líneas, cubiertas por unas 400 líneas de tests.
 - CI completo: unos 8 minutos, de los que el job de Android es el más lento.
