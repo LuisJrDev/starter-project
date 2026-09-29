@@ -107,6 +107,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bulletedList => 'Bulleted list';
 
   @override
+  String writingStats(int words, int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      words,
+      locale: localeName,
+      other: '$words words',
+      one: '1 word',
+    );
+    return '$_temp0 · $minutes min read';
+  }
+
+  @override
   String charactersUsed(int length, int maxLength) {
     return '$length of $maxLength characters used';
   }

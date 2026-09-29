@@ -97,6 +97,12 @@ class ArticleDraftEntity extends Equatable {
   /// journalist's previous article.
   bool get isBlank => title.trim().isEmpty && content.trim().isEmpty && thumbnail == null;
 
+  /// Words written so far in [content], without Markdown syntax.
+  int get wordCount => wordCountOf(content);
+
+  /// Estimated minutes readers will need, at least 1.
+  int get readingTimeInMinutes => readingTimeInMinutesOf(content);
+
   /// Plain-text excerpt of [content] shown in article lists.
   String get description {
     return _truncateWithoutSplittingCharacters(markdownToPlainText(content), descriptionMaxLength);

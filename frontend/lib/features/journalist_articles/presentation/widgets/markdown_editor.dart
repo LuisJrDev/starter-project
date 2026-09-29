@@ -12,6 +12,9 @@ class MarkdownEditor extends StatefulWidget {
   final int maxLength;
   final ValueChanged<String> onChanged;
   final String? errorText;
+
+  /// Shown under the text area, like the live word count, unless there is an error.
+  final String? helperText;
   final bool enabled;
 
   const MarkdownEditor({
@@ -20,6 +23,7 @@ class MarkdownEditor extends StatefulWidget {
     required this.maxLength,
     required this.onChanged,
     this.errorText,
+    this.helperText,
     this.enabled = true,
   });
 
@@ -85,6 +89,7 @@ class _MarkdownEditorState extends State<MarkdownEditor> {
       decoration: InputDecoration(
         hintText: context.l10n.contentHint,
         errorText: widget.errorText,
+        helperText: widget.helperText,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         counter: LengthCounter(controller: widget.controller, maxLength: widget.maxLength),
       ),

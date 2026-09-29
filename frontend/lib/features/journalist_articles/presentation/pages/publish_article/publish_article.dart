@@ -47,11 +47,18 @@ class _FormControllers {
 /// What every form field needs from the current state.
 class _FormBinding {
   final PublishArticleCubit cubit;
+  final ArticleDraftEntity draft;
   final AppLocalizations texts;
   final ArticleDraftErrorMessages errors;
   final bool isEditable;
 
-  const _FormBinding({required this.cubit, required this.texts, required this.errors, required this.isEditable});
+  const _FormBinding({
+    required this.cubit,
+    required this.draft,
+    required this.texts,
+    required this.errors,
+    required this.isEditable,
+  });
 }
 
 /// The publish form. Expects a [PublishArticleCubit] above it.
@@ -100,6 +107,7 @@ class PublishArticleForm extends HookWidget {
     return Builder(builder: (context) {
       final binding = _FormBinding(
         cubit: context.read<PublishArticleCubit>(),
+        draft: state.draft,
         texts: context.l10n,
         errors: ArticleDraftErrorMessages(state.visibleErrors, context.l10n),
         isEditable: state is! PublishArticlePublishing,
@@ -158,9 +166,17 @@ class PublishArticleForm extends HookWidget {
       controller: controller,
       maxLength: ArticleDraftEntity.contentMaxLength,
       errorText: binding.errors.content,
+      helperText: _writingStatsOf(binding),
       enabled: binding.isEditable,
       onChanged: binding.cubit.changeContent,
     );
+  }
+
+  /// "312 words · 2 min read" once the journalist starts writing.
+  String? _writingStatsOf(_FormBinding binding) {
+    final draft = binding.draft;
+    if (draft.wordCount == 0) return null;
+    return binding.texts.writingStats(draft.wordCount, draft.readingTimeInMinutes);
   }
 
   Widget _padded(Widget child) {

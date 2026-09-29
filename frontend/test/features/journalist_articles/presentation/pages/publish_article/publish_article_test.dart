@@ -18,6 +18,7 @@ import 'package:news_app_clean_architecture/features/journalist_articles/present
 import '../../../../../helpers/localized_app.dart';
 
 const _contentHint = 'Add article here… Use the toolbar for **bold** text and ## subtitles.';
+const _contentHintInSpanish = 'Escribe aquí tu artículo… Usa la barra para texto en **negrita** y ## subtítulos.';
 
 class MockPublishArticleUseCase extends Mock implements PublishArticleUseCase {}
 
@@ -273,5 +274,24 @@ void main() {
     expect(find.text('Adjuntar imagen'), findsOneWidget);
     expect(find.text('Añade un título a tu artículo.'), findsOneWidget);
     expect(find.text('Adjunta una imagen para ilustrar tu artículo.'), findsOneWidget);
+  });
+
+  testWidgets('shows the words and reading time while writing', (tester) async {
+    await openPublishForm(tester);
+    expect(find.textContaining('min read'), findsNothing);
+
+    await tester.enterText(find.widgetWithText(TextField, _contentHint), '## Hello\n\nA **short** story.');
+    await tester.pump();
+
+    expect(find.text('4 words · 1 min read'), findsOneWidget);
+  });
+
+  testWidgets('shows the writing statistics in Spanish, with the singular', (tester) async {
+    await openPublishForm(tester, locale: const Locale('es'));
+
+    await tester.enterText(find.widgetWithText(TextField, _contentHintInSpanish), 'Hola');
+    await tester.pump();
+
+    expect(find.text('1 palabra · 1 min de lectura'), findsOneWidget);
   });
 }

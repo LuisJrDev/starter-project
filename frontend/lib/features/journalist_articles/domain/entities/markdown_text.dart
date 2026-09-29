@@ -11,6 +11,20 @@ final _markdownNumberedItem = RegExp(r'^\s{0,3}\d+\.\s+');
 final _markdownInlineMarker = RegExp(r'(\*\*|__|\*|_|~~|`)');
 final _whitespace = RegExp(r'\s+');
 
+// Average silent reading speed of adults.
+const int _wordsReadPerMinute = 200;
+
+/// Words of the content, without Markdown syntax.
+int wordCountOf(String markdown) {
+  return markdownToPlainText(markdown).split(' ').where((word) => word.isNotEmpty).length;
+}
+
+/// Estimated minutes needed to read the content, at least 1.
+int readingTimeInMinutesOf(String markdown) {
+  final minutes = (wordCountOf(markdown) / _wordsReadPerMinute).ceil();
+  return minutes < 1 ? 1 : minutes;
+}
+
 /// The content without Markdown syntax, on a single line.
 String markdownToPlainText(String markdown) {
   return _stripMarkdown(markdown).replaceAll(_whitespace, ' ').trim();

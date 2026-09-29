@@ -36,6 +36,7 @@
   "italic": "Cursiva",
   "subtitle": "Subtítulo",
   "bulletedList": "Lista con viñetas",
+  "writingStats": "{words, plural, =1{1 palabra} other{{words} palabras}} · {minutes} min de lectura",
   "charactersUsed": "{length} de {maxLength} caracteres usados",
   "attachImage": "Adjuntar imagen",
   "changeImage": "Cambiar imagen",

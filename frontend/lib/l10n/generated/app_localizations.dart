@@ -287,6 +287,12 @@ abstract class AppLocalizations {
   /// **'Bulleted list'**
   String get bulletedList;
 
+  /// Live statistics under the article being written.
+  ///
+  /// In en, this message translates to:
+  /// **'{words, plural, =1{1 word} other{{words} words}} · {minutes} min read'**
+  String writingStats(int words, int minutes);
+
   /// What screen readers say for the 12/100 counter of a text field.
   ///
   /// In en, this message translates to:

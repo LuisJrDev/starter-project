@@ -41,6 +41,11 @@
   "italic": "Italic",
   "subtitle": "Subtitle",
   "bulletedList": "Bulleted list",
+  "writingStats": "{words, plural, =1{1 word} other{{words} words}} · {minutes} min read",
+  "@writingStats": {
+    "description": "Live statistics under the article being written.",
+    "placeholders": {"words": {"type": "int"}, "minutes": {"type": "int"}}
+  },
   "charactersUsed": "{length} of {maxLength} characters used",
   "@charactersUsed": {
     "description": "What screen readers say for the 12/100 counter of a text field.",

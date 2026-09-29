@@ -158,4 +158,16 @@ void main() {
       expect(const ArticleDraftEntity(thumbnail: thumbnail).isBlank, isFalse);
     });
   });
+
+  group('writing statistics', () {
+    test('counts the words without the Markdown syntax', () {
+      expect(const ArticleDraftEntity(content: '## A title\n\nSome **bold** words.').wordCount, 5);
+      expect(const ArticleDraftEntity().wordCount, 0);
+    });
+
+    test('estimates the reading time at 200 words per minute', () {
+      expect(ArticleDraftEntity(content: 'word ' * 199).readingTimeInMinutes, 1);
+      expect(ArticleDraftEntity(content: 'word ' * 401).readingTimeInMinutes, 3);
+    });
+  });
 }
