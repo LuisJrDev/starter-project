@@ -27,7 +27,7 @@ class ArticleWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsetsDirectional.only(
             start: 14, end: 14, bottom: 7, top: 7),
-        height: MediaQuery.of(context).size.width / 2.2,
+        height: articleTileHeightOf(context),
         child: Row(
           children: [
             _buildImage(context),
@@ -86,10 +86,12 @@ class ArticleWidget extends StatelessWidget {
               children: [
                 const Icon(Icons.timeline_outlined, size: 16),
                 const SizedBox(width: 4),
-                Text(
-                  article!.publishedAt!,
-                  style: const TextStyle(
-                    fontSize: 12,
+                Flexible(
+                  child: Text(
+                    article!.publishedAt!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ),
               ],

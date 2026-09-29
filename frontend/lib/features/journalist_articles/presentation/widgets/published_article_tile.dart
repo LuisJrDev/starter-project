@@ -23,7 +23,7 @@ class PublishedArticleTile extends StatelessWidget {
       onTap: () => onPressed(article),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        height: MediaQuery.of(context).size.width / 2.2,
+        height: articleTileHeightOf(context),
         child: Row(
           children: [
             _buildImage(context),

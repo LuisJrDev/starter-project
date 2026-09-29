@@ -27,6 +27,12 @@ AppBarTheme appBarTheme(ColorScheme colors, Color background) {
   );
 }
 
+/// Height of an article tile: its design height, grown with the reader's text size so that
+/// large text (an accessibility setting) never overflows the tile.
+double articleTileHeightOf(BuildContext context) {
+  return MediaQuery.textScalerOf(context).scale(MediaQuery.of(context).size.width / 2.2);
+}
+
 /// Background of an image that is loading or failed to load.
 Color placeholderColorOf(BuildContext context) {
   return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);

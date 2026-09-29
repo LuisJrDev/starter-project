@@ -136,18 +136,22 @@ class PublishedArticleDetail extends StatelessWidget {
     );
   }
 
+  /// Selectable through a [SelectionArea] rather than `MarkdownBody.selectable`, which makes screen
+  /// readers announce every paragraph as a text field.
   Widget _buildMarkdown(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return MarkdownBody(
+    return SelectionArea(
       key: const ValueKey('markdown'),
-      data: article.content,
-      selectable: true,
-      styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
-        p: textTheme.bodyLarge?.copyWith(fontSize: 17, height: 1.6),
-        h2: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-        h3: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        listBullet: textTheme.bodyLarge?.copyWith(fontSize: 17),
+      child: MarkdownBody(
+        data: article.content,
+        styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+          p: textTheme.bodyLarge?.copyWith(fontSize: 17, height: 1.6),
+          h2: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          h3: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          listBullet: textTheme.bodyLarge?.copyWith(fontSize: 17),
+        ),
       ),
     );
   }
+
 }
