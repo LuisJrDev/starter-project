@@ -1,9 +1,35 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_storage_mocks/firebase_storage_mocks.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/data/data_sources/remote/article_thumbnail_storage_data_source.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_thumbnail.dart';
+
+class MockStorage extends Mock implements FirebaseStorage {}
+
+class MockReference extends Mock implements Reference {}
+
+/// An upload the server accepted but never answers, like a frozen or overloaded backend.
+class UnansweredUploadTask extends Fake implements UploadTask {
+  final Completer<TaskSnapshot> _never = Completer();
+  bool isCancelled = false;
+
+  @override
+  Future<bool> cancel() async => isCancelled = true;
+
+  @override
+  Future<R> then<R>(FutureOr<R> Function(TaskSnapshot) onValue, {Function? onError}) {
+    return _never.future.then(onValue, onError: onError);
+  }
+
+  @override
+  Future<TaskSnapshot> timeout(Duration timeLimit, {FutureOr<TaskSnapshot> Function()? onTimeout}) {
+    return _never.future.timeout(timeLimit, onTimeout: onTimeout);
+  }
+}
 
 void main() {
   late MockFirebaseStorage storage;
@@ -52,5 +78,57 @@ void main() {
     await dataSource.uploadThumbnail('article1', thumbnail);
 
     expect(await dataSource.getThumbnailUrl('article1', thumbnail), contains('article1.jpg'));
+  });
+
+  group('when the server never answers', () {
+    const shortLimit = Duration(milliseconds: 50);
+    late MockReference reference;
+    late ArticleThumbnailStorageDataSource impatientDataSource;
+
+    setUpAll(() {
+      registerFallbackValue(File('fallback'));
+      registerFallbackValue(SettableMetadata());
+    });
+
+    setUp(() {
+      final storage = MockStorage();
+      reference = MockReference();
+      when(() => storage.ref(any())).thenReturn(reference);
+      impatientDataSource = ArticleThumbnailStorageDataSource(
+        storage,
+        uploadTimeLimit: shortLimit,
+        requestTimeLimit: shortLimit,
+      );
+    });
+
+    // setMaxUploadRetryTime only limits retries after errors: an unanswered request waits forever.
+    test('gives up the upload after its time limit and cancels it', () async {
+      final upload = UnansweredUploadTask();
+      when(() => reference.putFile(any(), any())).thenAnswer((_) => upload);
+
+      await expectLater(
+        impatientDataSource.uploadThumbnail('article1', await galleryImage('photo.jpg')),
+        throwsA(isA<TimeoutException>()),
+      );
+      expect(upload.isCancelled, isTrue);
+    });
+
+    test('gives up asking for the download URL', () async {
+      when(() => reference.getDownloadURL()).thenAnswer((_) => Completer<String>().future);
+
+      await expectLater(
+        impatientDataSource.getThumbnailUrl('article1', await galleryImage('photo.jpg')),
+        throwsA(isA<TimeoutException>()),
+      );
+    });
+
+    test('gives up deleting an orphaned thumbnail', () async {
+      when(() => reference.delete()).thenAnswer((_) => Completer<void>().future);
+
+      await expectLater(
+        impatientDataSource.deleteThumbnail('article1', await galleryImage('photo.jpg')),
+        throwsA(isA<TimeoutException>()),
+      );
+    });
   });
 }
