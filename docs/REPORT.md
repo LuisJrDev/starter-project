@@ -6,11 +6,11 @@ Cloud Storage) y aparece para todos en la pestaña *Community* de la app.
 
 | | |
 |---|---|
-| Rama | `feature/publish-article` (39 commits, uno por paso) |
+| Rama | `feature/publish-article` (41 commits, uno por paso) |
 | Backend | [`backend/docs/DB_SCHEMA.md`](../backend/docs/DB_SCHEMA.md), [`firestore.rules`](../backend/firestore.rules), [`storage.rules`](../backend/storage.rules) |
 | Frontend | [`frontend/lib/features/journalist_articles/`](../frontend/lib/features/journalist_articles) |
 | Plataformas | Android e iOS (simulador iPhone 17) |
-| Tests | 184 unitarios y de widgets, 66 de reglas de seguridad y 1 de integración de extremo a extremo |
+| Tests | 194 unitarios y de widgets, 66 de reglas de seguridad y 1 de integración de extremo a extremo |
 | CI | [GitHub Actions](../.github/workflows/ci.yml), los tres jobs en verde |
 | Vídeo | [`docs/media/publish-journey.mp4`](./media/publish-journey.mp4) (40 s) |
 
@@ -116,9 +116,9 @@ Markdown.
 |---|---|---|---|
 | <img src="media/05-publish-form-filled.png" width="200"> | <img src="media/06-publishing-progress.png" width="200"> | <img src="media/07-detail-markdown.png" width="200"> | <img src="media/08-offline-failure-retry.png" width="200"> |
 
-| Firma recordada | Confirmación al descartar | Leyendo en voz alta |
-|---|---|---|
-| <img src="media/09-signature-remembered.png" width="200"> | <img src="media/10-discard-confirmation.png" width="300"> | <img src="media/11-listen-reading-aloud.png" width="200"> |
+| Firma recordada | Confirmación al descartar | Leyendo en voz alta | Siguiendo la frase leída (iOS) |
+|---|---|---|---|
+| <img src="media/09-signature-remembered.png" width="200"> | <img src="media/10-discard-confirmation.png" width="300"> | <img src="media/11-listen-reading-aloud.png" width="200"> | <img src="media/12-read-aloud-follow-along.png" width="200"> |
 
 ### Verificación en producción
 Publiqué un artículo real desde la app. El documento `articles/VjV1yr3rUSC8zMzMouvG` tiene
@@ -146,10 +146,15 @@ devolvieron `403`.
 **Además:**
 - **Leer en voz alta**: el botón *Listen to this article* lee el título, la firma y el contenido
   con la voz del propio dispositivo, sin conexión, sin coste y sin claves de API. Convierte el
-  Markdown en frases para que la voz haga pausas, elige voz en inglés o español según el
-  artículo, lee en trozos por debajo del límite de 4.000 caracteres de Android y se detiene al
-  salir de la pantalla. Verificado en el emulador: el sistema muestra la pista de voz mientras lee
-  y ninguna después de *Stop* o al salir.
+  Markdown en frases, elige voz en inglés o español según el artículo y se detiene al salir de la
+  pantalla. Verificado en el emulador: el sistema muestra la pista de voz mientras lee y ninguna
+  después de *Stop* o al salir.
+- **Seguir la lectura**: mientras suena, la frase que se está leyendo se resalta en amarillo, la
+  pantalla se desplaza sola para mantenerla a la vista y una barra muestra el progreso. Al
+  terminar o detener, vuelve el Markdown con su formato. La app habla frase a frase, así sabe
+  exactamente cuál suena en Android y en iOS sin depender de los eventos de progreso de cada
+  motor de voz, que no se comportan igual. Verificado en el simulador de iPhone.
+- **Tiempo de lectura** estimado ("4 min read", a 200 palabras por minuto) junto a la firma.
 - **Privacidad de las fotos**: antes de subir una imagen se eliminan su ubicación GPS, la cámara
   y las fechas (EXIF, XMP, IPTC), conservando solo la orientación.
 - **iOS**: la app funciona en iPhone (probada en el simulador), incluido el test de integración
@@ -163,7 +168,7 @@ devolvieron `403`.
 - **Modo emulador** en la app y **script de seed** que publica pasando por las reglas.
 
 ### 6.2 Calidad y *Boy Scout rule* (CG1)
-- **Tests**: 184 unitarios y de widgets (entidades, use cases, modelo, data sources con Firebase
+- **Tests**: 194 unitarios y de widgets (entidades, use cases, modelo, data sources con Firebase
   simulado, repositorios, cubits, widgets y pantalla completa), 66 de reglas y 1 de integración
   de extremo a extremo (CG 4.2). La mayoría del dominio se escribió primero el test (TDD).
 - **CI** en cada push y PR: `flutter analyze` sin ningún aviso, tests, reglas contra el emulador y
@@ -236,7 +241,7 @@ suposiciones, y documentar también los errores y cómo se corrigieron.
 | `publish` devuelve `DataState<void>` | Separación entre órdenes y consultas (CG 3.6): la Home vuelve a pedir la lista. |
 
 ### 7.3 Métricas
-- 39 commits en la rama, uno por paso.
-- `journalist_articles`: 46 archivos y unas 2.200 líneas de Dart. Tests de Dart: unas 2.260 líneas.
+- 41 commits en la rama, uno por paso.
+- `journalist_articles`: 49 archivos y unas 2.700 líneas de Dart. Tests de Dart: unas 2.550 líneas.
 - Reglas: 114 líneas, cubiertas por unas 400 líneas de tests.
 - CI completo: unos 8 minutos, de los que el job de Android es el más lento.
