@@ -6,11 +6,11 @@ Cloud Storage) y aparece para todos en la pestaña *Community* de la app.
 
 | | |
 |---|---|
-| Rama | `feature/publish-article` (46 commits, uno por paso) |
+| Rama | `feature/publish-article` (49 commits, uno por paso) |
 | Backend | [`backend/docs/DB_SCHEMA.md`](../backend/docs/DB_SCHEMA.md), [`firestore.rules`](../backend/firestore.rules), [`storage.rules`](../backend/storage.rules) |
 | Frontend | [`frontend/lib/features/journalist_articles/`](../frontend/lib/features/journalist_articles) |
 | Plataformas | Android e iOS (simulador iPhone 17), modo claro y oscuro, inglés y español |
-| Tests | 245 unitarios y de widgets, 66 de reglas de seguridad y 1 de integración de extremo a extremo |
+| Tests | 293 unitarios y de widgets (44 de accesibilidad), 66 de reglas de seguridad y 1 de integración de extremo a extremo |
 | CI | [GitHub Actions](../.github/workflows/ci.yml), los tres jobs en verde |
 | Vídeo | [`docs/media/publish-journey.mp4`](./media/publish-journey.mp4) (40 s) |
 
@@ -70,6 +70,7 @@ Estos son los problemas reales que aparecieron, cómo se resolvieron y qué apre
 | **Las fotos se subían con su ubicación GPS.** Al probar iOS vi que la imagen que entrega `image_picker`, incluso ya reducida, conserva el EXIF: coordenadas GPS, cámara y fechas. En Android pasaba lo mismo. Las miniaturas son públicas, así que revelaban dónde estaba el periodista. | `ImageMetadataRemover` en Dart puro: quita EXIF, XMP, IPTC y los bloques de texto de JPEG, PNG y WebP, y conserva solo la orientación para que las fotos no salgan giradas. Verificado con Pillow y en los dos dispositivos, con fotos reales con GPS. En producción no se filtró nada: las imágenes subidas eran generadas y no tenían metadatos. | Probar con datos reales, no solo sintéticos: las imágenes de prueba sin metadatos escondían el problema. |
 | **iOS no compilaba con Xcode 26** usando los plugins de Firebase 2.x: gRPC-Core 1.62 no compila, las librerías estáticas se buscaban como dinámicas, y un include de `firebase_storage` y unos pods que declaraban iOS 10 fallaban. | Firestore precompilado (lo recomienda FlutterFire), enlace estático de los pods, includes permitidos e iOS 13 como versión mínima. Un último fallo al arrancar venía de restos del primer build en `DerivedData`. | Leer el informe de fallo (`.ips`) y el binario (`otool`) en lugar de probar a ciegas. |
 | **El borrador perdía la foto al actualizar la app en iOS.** Guardaba la ruta completa de la copia de la miniatura, y iOS cambia la ruta de la carpeta de la app con cada instalación o actualización (`…/Application/B9CE39C3…/` pasó a `…/76DE8D23…/`). | Se guarda solo el nombre del archivo, y la ruta se reconstruye al leer. Un test mueve la carpeta, y en el simulador el borrador vuelve completo tras reinstalar. | Probar el ciclo de vida real (matar, reinstalar), no solo el camino feliz dentro de una sesión. |
+| **Los tests de accesibilidad encontraron tres fallos.** (1) `MarkdownBody(selectable: true)` hacía que VoiceOver y TalkBack anunciaran cada párrafo del artículo como un campo de texto, y contaba cada uno como un botón diminuto. (2) Las tarjetas de las listas tenían una altura fija y, con la letra grande del sistema, el texto se salía. (3) La fecha de *Top news* no podía encogerse y se salía por la derecha. | (1) `SelectionArea`, que mantiene el texto seleccionable (ahora a lo largo de todo el artículo) y lo lee como texto. (2) La altura de la tarjeta crece con el tamaño de letra del usuario; al 100 % no cambia nada. (3) La fecha se recorta con puntos suspensivos. Comprobado en el simulador con la letra de accesibilidad grande. | "Accesible" no se puede afirmar a ojo: las guías automáticas encuentran lo que una revisión visual no ve. |
 | **GitHub marcó las claves de Firebase como secretos.** | Son identificadores públicos que van dentro de cada APK. Comprobé que están restringidas a las APIs de Firebase y lo documenté en [Security](../backend/README.md#security). | Entender una alerta antes de "arreglarla": aquí la defensa real son las reglas y las restricciones de la clave, no esconder la clave. |
 
 ## 4. Reflexión y próximos pasos
@@ -121,9 +122,9 @@ Markdown.
 |---|---|---|---|
 | <img src="media/09-signature-remembered.png" width="200"> | <img src="media/10-save-draft-on-leave.png" width="200"> | <img src="media/11-listen-reading-aloud.png" width="200"> | <img src="media/12-read-aloud-follow-along.png" width="200"> |
 
-| Borrador recuperado tras cerrar la app (iOS) | Modo oscuro (iOS) | En español (iOS) |
-|---|---|---|
-| <img src="media/13-draft-restored.png" width="200"> | <img src="media/14-dark-mode-reading.png" width="200"> | <img src="media/15-spanish-form.png" width="200"> |
+| Borrador recuperado tras cerrar la app (iOS) | Modo oscuro (iOS) | En español (iOS) | Letra de accesibilidad grande (iOS) |
+|---|---|---|---|
+| <img src="media/13-draft-restored.png" width="200"> | <img src="media/14-dark-mode-reading.png" width="200"> | <img src="media/15-spanish-form.png" width="200"> | <img src="media/16-large-text.png" width="200"> |
 
 ### Verificación en producción
 Publiqué un artículo real desde la app. El documento `articles/VjV1yr3rUSC8zMzMouvG` tiene
@@ -159,7 +160,13 @@ devolvieron `403`.
   terminar o detener, vuelve el Markdown con su formato. La app habla frase a frase, así sabe
   exactamente cuál suena en Android y en iOS sin depender de los eventos de progreso de cada
   motor de voz, que no se comportan igual. Verificado en el simulador de iPhone.
-- **Tiempo de lectura** estimado ("4 min read", a 200 palabras por minuto) junto a la firma.
+- **Tiempo de lectura** estimado ("4 min read", a 200 palabras por minuto) junto a la firma, y
+  **estadísticas mientras se escribe** bajo el editor ("312 words · 2 min read", en singular si
+  toca). El borrador y el artículo publicado cuentan con la misma función del dominio.
+- **Accesibilidad comprobada con tests**: 44 tests aplican las guías de accesibilidad de Flutter
+  (contraste de texto, tamaño mínimo de los botones en Android e iOS, botones con etiqueta para
+  el lector de pantalla) y muestran las pantallas con la letra al 200 %, en modo claro y oscuro,
+  en inglés y en español. Encontraron tres fallos reales, ya corregidos (ver la tabla de retos).
 - **Modo oscuro**: la app sigue el ajuste del teléfono y cambia al instante. El tema claro no
   cambia; el oscuro usa la misma paleta de Material 3. Los colores fijos (`Colors.black`) del
   código heredado pasaron a salir del tema, y el resaltado de la lectura mantiene el texto oscuro
@@ -189,8 +196,8 @@ devolvieron `403`.
 - **Modo emulador** en la app y **script de seed** que publica pasando por las reglas.
 
 ### 6.2 Calidad y *Boy Scout rule* (CG1)
-- **Tests**: 245 unitarios y de widgets (entidades, use cases, modelo, data sources con Firebase
-  simulado, repositorios, cubits, widgets y pantalla completa), 66 de reglas y 1 de integración
+- **Tests**: 293 unitarios y de widgets (entidades, use cases, modelo, data sources con Firebase
+  simulado, repositorios, cubits, widgets, pantalla completa y 44 de accesibilidad), 66 de reglas y 1 de integración
   de extremo a extremo (CG 4.2). La mayoría del dominio se escribió primero el test (TDD).
 - **CI** en cada push y PR: `flutter analyze` sin ningún aviso, tests, reglas contra el emulador y
   el recorrido de publicar en un emulador Android.
@@ -262,7 +269,7 @@ suposiciones, y documentar también los errores y cómo se corrigieron.
 | `publish` devuelve `DataState<void>` | Separación entre órdenes y consultas (CG 3.6): la Home vuelve a pedir la lista. |
 
 ### 7.3 Métricas
-- 46 commits en la rama, uno por paso.
-- `journalist_articles`: 55 archivos y unas 3.050 líneas de Dart. Tests de Dart: unas 3.200 líneas. Textos: 55 en inglés y en español.
+- 49 commits en la rama, uno por paso.
+- `journalist_articles`: 55 archivos y unas 3.100 líneas de Dart. Tests de Dart: unas 3.450 líneas. Textos: 56 en inglés y en español.
 - Reglas: 114 líneas, cubiertas por unas 400 líneas de tests.
 - CI completo: unos 8 minutos, de los que el job de Android es el más lento.
