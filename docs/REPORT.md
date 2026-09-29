@@ -6,7 +6,7 @@ Cloud Storage) y aparece para todos en la pestaña *Community* de la app.
 
 | | |
 |---|---|
-| Rama | `feature/publish-article` (56 commits, uno por paso) |
+| Rama | `feature/publish-article` (57 commits, uno por paso) |
 | Backend | [`backend/docs/DB_SCHEMA.md`](../backend/docs/DB_SCHEMA.md), [`firestore.rules`](../backend/firestore.rules), [`storage.rules`](../backend/storage.rules) |
 | Frontend | [`frontend/lib/features/journalist_articles/`](../frontend/lib/features/journalist_articles) |
 | Plataformas | Android e iOS (simulador iPhone 17), modo claro y oscuro, inglés y español |
@@ -43,9 +43,15 @@ En este proyecto aprendí y apliqué sobre la marcha:
 | **Reglas de seguridad** | Forma cerrada del documento, longitudes, `publishedAt == request.time`, listados limitados a 50, solo creación. En Storage: tipo de archivo según la extensión, 5 MB, sin sobrescribir y consulta a Firestore desde las reglas. |
 | **Tests de reglas** | `@firebase/rules-unit-testing` con el runner nativo de Node (`node:test`): 66 tests, incluidos los casos límite. |
 | **Firebase Emulator Suite** | Desarrollo y tests sin tocar producción. La app tiene un modo emulador (`--dart-define=USE_FIREBASE_EMULATORS=true`). |
-| **FlutterFire** | Configuración solo para Android, reutilizando la app ya registrada en Firebase. |
+| **FlutterFire** | Configuración para Android e iOS, reutilizando la app Android ya registrada en Firebase. |
 | **`integration_test`** | Un test del recorrido completo en el dispositivo, contra el emulador de Firebase. |
 | **GitHub Actions** | CI con análisis, tests, reglas y el test de integración en un emulador Android. |
+| **iOS con Xcode 26** | CocoaPods, Firestore precompilado, enlace estático de los pods y lectura de informes de fallo (`.ips`) y binarios (`otool`) para diagnosticar. |
+| **Texto a voz (`flutter_tts`)** | La voz del dispositivo, frase a frase, para saber cuál suena y resaltarla en Android e iOS. |
+| **Traducciones (`gen-l10n`)** | Archivos ARB en inglés y español, fechas y números según el idioma, y un test que exige que no falte ninguna traducción. |
+| **Guías de accesibilidad de Flutter** | `meetsGuideline` (contraste, tamaño de los botones, etiquetas) y pantallas con la letra al 200 %, en modo claro y oscuro. |
+| **Formatos de imagen** | Estructura de JPEG, PNG y WebP, para quitar los metadatos (EXIF, XMP) sin librerías y conservando la orientación. |
+| **Vídeo automatizado** | Un guion de `integration_test` con subtítulos, grabado con `simctl` y comprimido con AVFoundation. |
 
 Me apoyé en la documentación oficial de Firebase y Flutter y en un asistente de IA (ver la
 [sección 7.1](#71-uso-de-inteligencia-artificial)), comprobando cada decisión antes de darla por
@@ -94,36 +100,38 @@ de avanzar y verificarlo todo en el dispositivo y en el CI me dio confianza en l
    sean la app auténtica.
 3. **Cloud Function programada** que borre imágenes huérfanas, ahora que el proyecto está en Blaze.
 4. **Actualizar las dependencias heredadas** (retrofit 4, dio 5, floor, build_runner). Hoy
-   bloquean herramientas modernas como `bloc_test`.
+   bloquean herramientas modernas como `bloc_test`, y `build_runner` 2.1.2 ya no compila en Dart 3.
 5. **Asistente de redacción con IA** (títulos sugeridos, corrección, traducción) detrás de una
    Cloud Function con Gemini, para que ninguna clave de IA viaje dentro de la app.
 6. **CI también en iOS** (runner macOS) y **Firebase 3.x+**, que quitaría los parches del `Podfile`.
-7. **Community en tiempo real**, **autoguardado del borrador**, **modo oscuro** e **i18n**
-   (español e inglés).
+7. **Community en tiempo real**, con los *snapshots* de Firestore en lugar de refrescar a mano.
+   (El borrador automático, el modo oscuro y el español/inglés, que estaban en esta lista, ya
+   están hechos: ver la [sección 6.1](#61-funcionalidades-nuevas).)
 
 ## 5. Pruebas del proyecto
 
 ### Vídeo: demo completa (3 min 33 s)
 [`docs/media/demo.mp4`](./media/demo.mp4): la app entera en un iPhone (simulador), con subtítulos
 en español que explican cada paso. Corre contra Firebase Emulator Suite con las reglas de
-seguridad reales, así que publica de verdad sin tocar producción. En orden:
+seguridad reales, así que publica de verdad sin tocar producción. Los minutos permiten saltar
+a cada parte:
 
-1. *Top news* y la pestaña *Community*, con deslizar para actualizar.
-2. Publicar vacío: cada campo explica qué falta.
-3. Título con contador (el emoji cuenta 2, como las reglas) y firma.
-4. Foto real de una NIKON D90 con GPS: el vídeo comprueba en ese momento que la foto original
-   tiene EXIF y la que se sube no.
-5. Editor Markdown: subtítulo, negrita y lista desde la barra, palabras y tiempo de lectura en
-   vivo, y vista previa.
-6. Publicar, con el botón de progreso, y el artículo el primero en *Community*.
-7. El artículo con Markdown, y escucharlo con la frase que suena resaltada y seguida.
-8. Firma recordada, borrador guardado solo, diálogo al salir y borrador recuperado al volver a
-   abrir la app.
-9. **Sin conexión de verdad**: el script de grabación congela los emuladores (`SIGSTOP`), la app
-   se rinde a los 30 s con *Retry*, vuelve la conexión y se publica al reintentar. El borrador se
-   borra.
-10. Modo oscuro, español y letra grande, cambiados en vivo, y texto seleccionable con el menú en
-    español.
+| Minuto | Escena |
+|---|---|
+| 0:04 | *Top news* y la pestaña *Community*, con deslizar para actualizar (0:11). |
+| 0:18 | Publicar vacío: cada campo explica qué falta. |
+| 0:24 | Título con contador (el emoji cuenta 2, como las reglas) y firma. |
+| 0:29 | Foto real de una NIKON D90 con GPS; en 0:32 el vídeo comprueba que la original tiene EXIF y la que se sube no. |
+| 0:37 | Editor Markdown: subtítulo, negrita y lista desde la barra, palabras y tiempo de lectura en vivo; vista previa en 0:53. |
+| 0:58 | Publicar, con el botón de progreso, y el artículo el primero en *Community* (1:00). |
+| 1:04 | El artículo con Markdown y tiempo de lectura. |
+| 1:08 | Escucharlo: la frase que suena se resalta y la pantalla la sigue; detener en 1:25. |
+| 1:30 | Firma recordada. |
+| 1:34 | Borrador guardado solo, diálogo al salir (1:40) y borrador recuperado al volver a abrir la app (1:48). |
+| 1:58 | **Sin conexión de verdad**: el script de grabación congela los emuladores (`SIGSTOP`), la app se rinde a los 30 s con *Retry* (2:29), vuelve la conexión y se publica al reintentar (2:34). El borrador se borra. |
+| 2:42 | Modo oscuro en vivo, con el resaltado de la lectura legible (2:50). |
+| 2:59 | Español en vivo: textos, fechas y menús; texto seleccionable (3:04) y errores traducidos con el tema claro (3:11). |
+| 3:18 | Letra de accesibilidad grande, sin que nada se corte. |
 
 La hoja de fotos del sistema es lo único simulado: la foto pasa por la ruta real de la app,
 incluida la eliminación de metadatos. El simulador no graba audio, así que la voz no se oye. Se
@@ -164,59 +172,59 @@ devolvieron `403`.
 ### 6.1 Funcionalidades nuevas
 **Todos los comentarios del Figma están implementados:**
 
-| # | Comentario | Implementación |
-|---|---|---|
-| 1 | Límite de caracteres en el título | Contador en vivo que cuenta igual que las reglas. El límite se valida en UI, entidad y reglas. |
-| 2 | Attach Image abre solo la galería | Selector de imágenes del sistema, nunca la cámara, a través de las capas (use case → repositorio → data source). |
-| 3 | Markdown | Editor con barra (negrita, cursiva, subtítulo, lista), vista previa y renderizado en el detalle. |
-| 4 | Tocar la imagen para cambiarla | Componente *Add Thumbnail* con dos estados y el chip "Change image". |
-| 5 | Mejorar la UI | Pestañas *Top news* / *Community*, pantallas de lista vacía y de error, animación Hero, textos y botones grandes, etiquetas de accesibilidad. |
-| 6 | Publicar vacío → errores por campo | Errores en frases claras que se actualizan mientras se corrige. |
-| 7 | Confirmación y vuelta a la Home | Salta a *Community*, el artículo aparece el primero y se muestra un aviso. |
-| 8 | Estado de carga | Botón deshabilitado con progreso; un doble toque no publica dos veces. |
+| # | Comentario | Implementación | Vídeo |
+|---|---|---|---|
+| 1 | Límite de caracteres en el título | Contador en vivo que cuenta igual que las reglas. El límite se valida en UI, entidad y reglas. | 0:24 |
+| 2 | Attach Image abre solo la galería | Selector de imágenes del sistema, nunca la cámara, a través de las capas (use case → repositorio → data source). | 0:29 |
+| 3 | Markdown | Editor con barra (negrita, cursiva, subtítulo, lista), vista previa y renderizado en el detalle. | 0:37 |
+| 4 | Tocar la imagen para cambiarla | Componente *Add Thumbnail* con dos estados y el chip "Change image". | 0:32 |
+| 5 | Mejorar la UI | Pestañas *Top news* / *Community*, pantallas de lista vacía y de error, animación Hero, textos y botones grandes, etiquetas de accesibilidad. | 0:04 |
+| 6 | Publicar vacío → errores por campo | Errores en frases claras que se actualizan mientras se corrige. | 0:18 |
+| 7 | Confirmación y vuelta a la Home | Salta a *Community*, el artículo aparece el primero y se muestra un aviso. | 1:00 |
+| 8 | Estado de carga | Botón deshabilitado con progreso; un doble toque no publica dos veces. | 0:58 |
 
 **Además:**
-- **Leer en voz alta**: el botón *Listen to this article* lee el título, la firma y el contenido
+- **Leer en voz alta**: *(vídeo 1:08)* el botón *Listen to this article* lee el título, la firma y el contenido
   con la voz del propio dispositivo, sin conexión, sin coste y sin claves de API. Convierte el
   Markdown en frases, elige voz en inglés o español según el artículo y se detiene al salir de la
   pantalla. Verificado en el emulador: el sistema muestra la pista de voz mientras lee y ninguna
   después de *Stop* o al salir.
-- **Seguir la lectura**: mientras suena, la frase que se está leyendo se resalta en amarillo, la
+- **Seguir la lectura**: *(vídeo 1:08)* mientras suena, la frase que se está leyendo se resalta en amarillo, la
   pantalla se desplaza sola para mantenerla a la vista y una barra muestra el progreso. Al
   terminar o detener, vuelve el Markdown con su formato. La app habla frase a frase, así sabe
   exactamente cuál suena en Android y en iOS sin depender de los eventos de progreso de cada
   motor de voz, que no se comportan igual. Verificado en el simulador de iPhone.
-- **Tiempo de lectura** estimado ("4 min read", a 200 palabras por minuto) junto a la firma, y
+- **Tiempo de lectura** estimado *(vídeo 1:04 y 0:37)* ("4 min read", a 200 palabras por minuto) junto a la firma, y
   **estadísticas mientras se escribe** bajo el editor ("312 words · 2 min read", en singular si
   toca). El borrador y el artículo publicado cuentan con la misma función del dominio.
-- **Accesibilidad comprobada con tests**: 44 tests aplican las guías de accesibilidad de Flutter
+- **Accesibilidad comprobada con tests**: *(vídeo 3:18)* 44 tests aplican las guías de accesibilidad de Flutter
   (contraste de texto, tamaño mínimo de los botones en Android e iOS, botones con etiqueta para
   el lector de pantalla) y muestran las pantallas con la letra al 200 %, en modo claro y oscuro,
   en inglés y en español. Encontraron tres fallos reales, ya corregidos (ver la tabla de retos).
-- **Modo oscuro**: la app sigue el ajuste del teléfono y cambia al instante. El tema claro no
+- **Modo oscuro**: *(vídeo 2:42)* la app sigue el ajuste del teléfono y cambia al instante. El tema claro no
   cambia; el oscuro usa la misma paleta de Material 3. Los colores fijos (`Colors.black`) del
   código heredado pasaron a salir del tema, y el resaltado de la lectura mantiene el texto oscuro
   para leerse igual de bien en los dos modos.
-- **En inglés y español**: todos los textos de la app, incluidos los errores del formulario, los
+- **En inglés y español**: *(vídeo 2:59)* todos los textos de la app, incluidos los errores del formulario, los
   avisos y las etiquetas de accesibilidad, salen de archivos ARB con `gen-l10n`, el sistema
   oficial de Flutter. Las fechas y los números se escriben como en cada idioma ("28 sept 2026",
   "10.000 caracteres"). Un test falla si falta una traducción, y el test de integración fija el
   inglés para funcionar en teléfonos de cualquier idioma. Los artículos no se traducen: se
   muestran en el idioma en que se escribieron.
-- **Privacidad de las fotos**: antes de subir una imagen se eliminan su ubicación GPS, la cámara
+- **Privacidad de las fotos**: *(vídeo 0:29)* antes de subir una imagen se eliminan su ubicación GPS, la cámara
   y las fechas (EXIF, XMP, IPTC), conservando solo la orientación.
 - **iOS**: la app funciona en iPhone (probada en el simulador), incluido el test de integración
   del recorrido de publicar.
-- **Firma recordada** entre sesiones, sin pisar lo que el periodista ya haya escrito.
-- **Borrador guardado automáticamente**: mientras el periodista escribe, el título, la firma, el
+- **Firma recordada** *(vídeo 1:30)* entre sesiones, sin pisar lo que el periodista ya haya escrito.
+- **Borrador guardado automáticamente**: *(vídeo 1:34)* mientras el periodista escribe, el título, la firma, el
   contenido y la miniatura se guardan en el dispositivo un segundo después de dejar de escribir, y
   al salir o antes de publicar. Si cierra la app, se le acaba la batería o la app se cae, al volver
   a pulsar **+** el artículo sigue ahí, con un aviso y la opción *Start over*. Al salir con algo
   escrito, la app pregunta *Keep writing / Discard / Save draft*. Al publicar, el borrador se
   borra. La miniatura se copia a la carpeta privada de la app, porque la del selector de imágenes
   es temporal. Verificado en el simulador de iPhone matando la app y reinstalándola.
-- **Paginación infinita** y *pull-to-refresh*; al refrescar, la lista actual sigue en pantalla.
-- **Publicación robusta sin conexión**: transacción, límites de tiempo, limpieza de imágenes
+- **Paginación infinita** *(vídeo 0:11)* y *pull-to-refresh*; al refrescar, la lista actual sigue en pantalla.
+- **Publicación robusta sin conexión**: *(vídeo 1:58)* transacción, límites de tiempo, limpieza de imágenes
   huérfanas y un aviso con **Retry**.
 - **Imágenes reducidas en el dispositivo** (1920 px, JPEG 85), muy por debajo del límite de 5 MB.
 - **Modo emulador** en la app y **script de seed** que publica pasando por las reglas.
@@ -300,7 +308,7 @@ suposiciones, y documentar también los errores y cómo se corrigieron.
 | `PublishArticleCubit` recibe 5 use cases y `PublishArticleUseCase` 3 repositorios | CG 3.5 limita los argumentos de las **funciones** para que sus tests sean simples. Estos son **constructores de inyección de dependencias**: cada argumento es una dependencia que el test sustituye por un mock, y agruparlos en un objeto solo escondería las dependencias. Todas las funciones y métodos tienen 2 argumentos o menos, salvo los dos `errorBuilder` de imágenes, cuya firma de 3 argumentos impone Flutter. |
 
 ### 7.3 Métricas
-- 56 commits en la rama, uno por paso.
+- 57 commits en la rama, uno por paso.
 - `journalist_articles`: 55 archivos y unas 3.100 líneas de Dart. Tests de Dart: unas 4.200 líneas. Textos: 56 en inglés y en español.
 - Reglas: 114 líneas, cubiertas por unas 400 líneas de tests.
 - CI completo: unos 8 minutos, de los que el job de Android es el más lento.
