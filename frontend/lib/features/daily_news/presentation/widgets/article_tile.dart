@@ -40,8 +40,10 @@ class ArticleWidget extends StatelessWidget {
   }
 
   Widget _buildImage(BuildContext context) {
+    final imageUrl = article!.urlToImage;
+    if (imageUrl == null) return const _ArticleImageFrame(child: Icon(Icons.image_not_supported_outlined));
     return CachedNetworkImage(
-      imageUrl: article!.urlToImage!,
+      imageUrl: imageUrl,
       imageBuilder: (context, imageProvider) =>
           _ArticleImageFrame(image: DecorationImage(image: imageProvider, fit: BoxFit.cover)),
       progressIndicatorBuilder: (context, url, downloadProgress) =>

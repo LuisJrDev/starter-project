@@ -82,12 +82,18 @@ class ArticleDetailsView extends HookWidget {
   }
 
   Widget _buildArticleImage() {
+    final imageUrl = article!.urlToImage;
+    if (imageUrl == null) return const SizedBox(height: 14);
     return Container(
       width: double.maxFinite,
       height: 250,
       margin: const EdgeInsets.only(top: 14),
-      child: Image.network(article!.urlToImage!, fit: BoxFit.cover),
+      child: Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: _buildBrokenImage),
     );
+  }
+
+  Widget _buildBrokenImage(BuildContext context, Object error, StackTrace? stackTrace) {
+    return const Center(child: Icon(Icons.broken_image_outlined, size: 48));
   }
 
   Widget _buildArticleDescription() {

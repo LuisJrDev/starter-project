@@ -55,12 +55,15 @@ fvm flutter test integration_test --dart-define=USE_FIREBASE_EMULATORS=true     
 ```
 Add `--dart-define=SLOW_MOTION=true` to pause after every step, e.g. to record a demo video.
 
-### Generate files for routing, di etc.:
-`flutter pub run build_runner build --delete-conflicting-outputs`
-### Generate the icons:
-`flutter pub run flutter_launcher_icons`
-### Install the Project Dependencies (in pubsec.yaml)
-`flutter pub get`
+### Install the project dependencies (in pubspec.yaml)
+`fvm flutter pub get` (it also generates the English and Spanish texts from `lib/l10n/*.arb`)
+### Generated files of `daily_news` (Floor database and Retrofit)
+The `*.g.dart` files are committed, so there is nothing to generate to run the app. The original
+instructions ran `flutter pub run build_runner build --delete-conflicting-outputs`, but the pinned
+`build_runner` 2.1.2 no longer compiles on Dart 3 (it uses the removed `NullThrownError`).
+Regenerating them would require upgrading `build_runner`, `floor_generator` and
+`retrofit_generator` together. They also generated the icons with `flutter_launcher_icons`, which
+is not a dependency of the project; the app keeps Flutter's default icon.
 
 ### How can I best understand this project?
 In order to best understand this project and its underlying intricacies, we recommend that you watch this tutorial: [Flutter Clean Architecture Tutorial](https://www.youtube.com/watch?v=7V_P6dovixg).
@@ -69,7 +72,7 @@ This tutorial **literally builds this project from the ground up** so we really 
 Furthermore, we will now leave the index of this project with all the documentation that must be read before contributing to the frontend.
 
 # Index
-1. [Contribution Guidelines](./docs/CONTRIBUTION_GUIDELINES.md)
-2. [Architecture Violations](./docs/ARCHITECTURE_VIOLATIONS.md)
-3. [Code Quality Violations](./docs/CODING_GUIDELINES.md)
-4. [Our App Architecture](./docs/APP_ARCHITECTURE.md)
+1. [Contribution Guidelines](../docs/CONTRIBUTION_GUIDELINES.md)
+2. [Architecture Violations](../docs/ARCHITECTURE_VIOLATIONS.md)
+3. [Code Quality Violations](../docs/CODING_GUIDELINES.md)
+4. [Our App Architecture](../docs/APP_ARCHITECTURE.md)

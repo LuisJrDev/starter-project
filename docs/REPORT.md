@@ -217,11 +217,11 @@ devolvieron `403`.
 ```mermaid
 flowchart LR
     subgraph Presentation
-        UI[Screens and widgets] --> C[PublishArticleCubit / PublishedArticlesCubit]
+        UI[Screens and widgets] --> C[Cubits: PublishArticle, PublishedArticles, ArticleNarration]
     end
     subgraph Domain["Domain (pure Dart)"]
         UC[Use cases] --> R[Repository interfaces]
-        E[Entities: ArticleDraft, ArticleThumbnail, PublishedArticle]
+        E[Entities: ArticleDraft, ArticleThumbnail, PublishedArticle, ArticleNarration]
     end
     subgraph Data
         RI[RepositoryImpl] --> DS[Data sources]
@@ -231,8 +231,8 @@ flowchart LR
     RI -. implements .-> R
     DS --> FS[(Cloud Firestore)]
     DS --> ST[(Cloud Storage)]
-    DS --> G[Gallery / image_picker]
-    DS --> P[shared_preferences]
+    DS --> G[Gallery / image_picker + metadata removal]
+    DS --> P[Device storage: signature and draft]
     DS --> V[Device voice / flutter_tts]
 ```
 
@@ -267,6 +267,8 @@ suposiciones, y documentar también los errores y cómo se corrigieron.
 | Reglas de solo creación mientras no haya Auth | Sin identidad, permitir editar o borrar dejaría a cualquiera modificar artículos ajenos. |
 | `thumbnailURL` con la URL de descarga, validada contra el id del documento | La imagen carga directamente en la UI y nadie puede apuntar a imágenes ajenas. |
 | `publish` devuelve `DataState<void>` | Separación entre órdenes y consultas (CG 3.6): la Home vuelve a pedir la lista. |
+| Carpetas `domain/use_cases` y `presentation/screens` en las dos funcionalidades | Así las nombra `APP_ARCHITECTURE.md`. El código original usaba `usecases` y `pages`; se renombraron también en `daily_news` (*Boy Scout rule*). |
+| `PublishArticleCubit` recibe 5 use cases y `PublishArticleUseCase` 3 repositorios | CG 3.5 limita los argumentos de las **funciones** para que sus tests sean simples. Estos son **constructores de inyección de dependencias**: cada argumento es una dependencia que el test sustituye por un mock, y agruparlos en un objeto solo escondería las dependencias. Todas las funciones y métodos tienen 2 argumentos o menos, salvo los dos `errorBuilder` de imágenes, cuya firma de 3 argumentos impone Flutter. |
 
 ### 7.3 Métricas
 - 49 commits en la rama, uno por paso.
