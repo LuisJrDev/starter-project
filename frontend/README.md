@@ -55,6 +55,17 @@ fvm flutter test integration_test --dart-define=USE_FIREBASE_EMULATORS=true     
 ```
 Add `--dart-define=SLOW_MOTION=true` to pause after every step, e.g. to record a demo video.
 
+### Demo video
+`integration_test/demo_video_test.dart` is the script of `docs/media/demo.mp4`: the whole app,
+step by step, with captions, against the emulators. It is skipped unless `RECORD_DEMO=true`, so
+CI does not run it. To record it again on an iOS simulator (with the emulators running and seeded
+with `EMULATOR_THUMBNAIL_HOST=127.0.0.1 npm run seed:emulator`):
+```
+tool/record_demo_video.sh <simulator UDID>
+```
+It records the simulator screen, pauses the emulators for the offline scene, and re-encodes the
+video at 720 px wide with `tool/transcode_video.swift` (AVFoundation, no ffmpeg needed).
+
 ### Install the project dependencies (in pubspec.yaml)
 `fvm flutter pub get` (it also generates the English and Spanish texts from `lib/l10n/*.arb`)
 ### Generated files of `daily_news` (Floor database and Retrofit)
