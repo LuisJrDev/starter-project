@@ -7,9 +7,11 @@ import 'package:mocktail/mocktail.dart';
 import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_draft.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_thumbnail.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/get_saved_author_name.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/discard_draft.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/pick_thumbnail_from_gallery.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/publish_article.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/resume_draft.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/save_draft.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/publish_article/publish_article_cubit.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/pages/publish_article/publish_article.dart';
 
@@ -19,20 +21,34 @@ class MockPublishArticleUseCase extends Mock implements PublishArticleUseCase {}
 
 class MockPickThumbnailFromGalleryUseCase extends Mock implements PickThumbnailFromGalleryUseCase {}
 
-class MockGetSavedAuthorNameUseCase extends Mock implements GetSavedAuthorNameUseCase {}
+class MockResumeDraftUseCase extends Mock implements ResumeDraftUseCase {}
+
+class MockSaveDraftUseCase extends Mock implements SaveDraftUseCase {}
+
+class MockDiscardDraftUseCase extends Mock implements DiscardDraftUseCase {}
 
 void main() {
   late MockPublishArticleUseCase publishArticle;
   late MockPickThumbnailFromGalleryUseCase pickThumbnail;
-  late MockGetSavedAuthorNameUseCase getSavedAuthorName;
+  late MockResumeDraftUseCase resumeDraft;
+  late MockSaveDraftUseCase saveDraft;
+  late MockDiscardDraftUseCase discardDraft;
 
   setUpAll(() => registerFallbackValue(const ArticleDraftEntity()));
+
+  void givenDraftToResume(ArticleDraftEntity draft) {
+    when(() => resumeDraft()).thenAnswer((_) async => DataSuccess(draft));
+  }
 
   setUp(() {
     publishArticle = MockPublishArticleUseCase();
     pickThumbnail = MockPickThumbnailFromGalleryUseCase();
-    getSavedAuthorName = MockGetSavedAuthorNameUseCase();
-    when(() => getSavedAuthorName()).thenAnswer((_) async => const DataSuccess(null));
+    resumeDraft = MockResumeDraftUseCase();
+    saveDraft = MockSaveDraftUseCase();
+    discardDraft = MockDiscardDraftUseCase();
+    givenDraftToResume(const ArticleDraftEntity());
+    when(() => saveDraft(params: any(named: 'params'))).thenAnswer((_) async => const DataSuccess(null));
+    when(() => discardDraft()).thenAnswer((_) async => const DataSuccess(null));
     when(() => pickThumbnail()).thenAnswer(
       (_) async => const DataSuccess(ArticleThumbnailEntity(localPath: '/gallery/photo.jpg', sizeInBytes: 1024)),
     );
@@ -52,7 +68,8 @@ void main() {
             context,
             MaterialPageRoute(
               builder: (_) => BlocProvider(
-                create: (_) => PublishArticleCubit(publishArticle, pickThumbnail, getSavedAuthorName)..loadSavedAuthorName(),
+                create: (_) => PublishArticleCubit(publishArticle, pickThumbnail, resumeDraft, saveDraft, discardDraft)
+                  ..resumeDraft(),
                 child: const PublishArticleForm(),
               ),
             ),
@@ -93,7 +110,7 @@ void main() {
   });
 
   testWidgets('prefills the signature of the previous article', (tester) async {
-    when(() => getSavedAuthorName()).thenAnswer((_) async => const DataSuccess('Daily News Staff'));
+    givenDraftToResume(const ArticleDraftEntity(author: 'Daily News Staff'));
 
     await openPublishForm(tester);
 
@@ -159,17 +176,86 @@ void main() {
     expect(find.text('Retry'), findsOneWidget);
   });
 
-  testWidgets('asks before discarding a half-written article', (tester) async {
-    await openPublishForm(tester);
+  Future<void> leaveHalfWrittenArticle(WidgetTester tester) async {
     await tester.enterText(find.widgetWithText(TextField, 'Title'), 'Draft');
     await tester.pump();
-
     await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
-    expect(find.text('Discard this article?'), findsOneWidget);
+  }
+
+  testWidgets('restores the article left unfinished', (tester) async {
+    givenDraftToResume(const ArticleDraftEntity(title: 'Half written', content: 'The story so far', author: 'Local Desk'));
+
+    await openPublishForm(tester);
+
+    expect(find.widgetWithText(TextField, 'Half written'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'The story so far'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Local Desk'), findsOneWidget);
+    expect(find.textContaining('restored the article'), findsOneWidget);
+  });
+
+  testWidgets('starting over empties the form but keeps the signature', (tester) async {
+    givenDraftToResume(const ArticleDraftEntity(title: 'Half written', content: 'The story so far', author: 'Local Desk'));
+    await openPublishForm(tester);
+
+    await tester.tap(find.text('Start over'));
+    await tester.pumpAndSettle();
+
+    verify(() => discardDraft()).called(1);
+    expect(find.text('Half written'), findsNothing);
+    expect(find.text('The story so far'), findsNothing);
+    expect(find.widgetWithText(TextField, 'Local Desk'), findsOneWidget);
+  });
+
+  testWidgets('does not show the restored message for a new article', (tester) async {
+    await openPublishForm(tester);
+
+    expect(find.textContaining('restored the article'), findsNothing);
+  });
+
+  testWidgets('asks what to do with a half-written article when leaving', (tester) async {
+    await openPublishForm(tester);
+
+    await leaveHalfWrittenArticle(tester);
+
+    expect(find.text('Save this article as a draft?'), findsOneWidget);
+    expect(find.text('Keep writing'), findsOneWidget);
+    expect(find.text('Discard'), findsOneWidget);
+    expect(find.text('Save draft'), findsOneWidget);
+  });
+
+  testWidgets('saving the draft leaves the form with the draft saved', (tester) async {
+    await openPublishForm(tester);
+    await leaveHalfWrittenArticle(tester);
+
+    await tester.tap(find.text('Save draft'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PublishArticleForm), findsNothing);
+    verify(() => saveDraft(params: const ArticleDraftEntity(title: 'Draft'))).called(1);
+    verifyNever(() => discardDraft());
+  });
+
+  testWidgets('discarding leaves the form and deletes the draft', (tester) async {
+    await openPublishForm(tester);
+    await leaveHalfWrittenArticle(tester);
 
     await tester.tap(find.text('Discard'));
     await tester.pumpAndSettle();
+
     expect(find.byType(PublishArticleForm), findsNothing);
+    verify(() => discardDraft()).called(1);
+    verifyNever(() => saveDraft(params: any(named: 'params')));
+  });
+
+  testWidgets('keep writing stays in the form', (tester) async {
+    await openPublishForm(tester);
+    await leaveHalfWrittenArticle(tester);
+
+    await tester.tap(find.text('Keep writing'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(PublishArticleForm), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Draft'), findsOneWidget);
   });
 }

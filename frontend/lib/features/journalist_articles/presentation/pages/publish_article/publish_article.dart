@@ -13,19 +13,21 @@ import '../../widgets/limited_text_field.dart';
 import '../../widgets/markdown_editor.dart';
 import '../../widgets/publish_article_button.dart';
 
-/// Screen where a journalist writes and publishes an article.
-/// Pops with `true` once the article has been published.
+/// Screen where a journalist writes and publishes an article. The draft is saved on the device
+/// while writing and resumed the next time. Pops with `true` once the article has been published.
 class PublishArticleView extends StatelessWidget {
   const PublishArticleView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<PublishArticleCubit>()..loadSavedAuthorName(),
+      create: (_) => sl<PublishArticleCubit>()..resumeDraft(),
       child: const PublishArticleForm(),
     );
   }
 }
+
+enum _LeaveChoice { keepWriting, discardDraft, saveDraft }
 
 class _FormControllers {
   final TextEditingController title;
@@ -33,6 +35,12 @@ class _FormControllers {
   final TextEditingController content;
 
   const _FormControllers({required this.title, required this.author, required this.content});
+
+  void showDraft(ArticleDraftEntity draft) {
+    title.text = draft.title;
+    author.text = draft.author;
+    content.text = draft.content;
+  }
 }
 
 /// What every form field needs from the current state.
@@ -57,7 +65,7 @@ class PublishArticleForm extends HookWidget {
     );
     return BlocConsumer<PublishArticleCubit, PublishArticleState>(
       listener: (context, state) {
-        _prefillAuthor(controllers.author, state);
+        if (state is PublishArticleDraftLoaded) controllers.showDraft(state.draft);
         _onStateChanged(context, state);
       },
       builder: (context, state) => PopScope(
@@ -157,7 +165,7 @@ class PublishArticleForm extends HookWidget {
   }
 
   bool _canLeaveWithoutConfirmation(PublishArticleState state) {
-    return state is! PublishArticlePublishing && !state.hasUnsavedChanges;
+    return state is! PublishArticlePublishing && !state.hasStartedWriting;
   }
 
   void _onPublishPressed(BuildContext context) {
@@ -165,10 +173,12 @@ class PublishArticleForm extends HookWidget {
     context.read<PublishArticleCubit>().publish();
   }
 
-  void _prefillAuthor(TextEditingController authorController, PublishArticleState state) {
-    if (authorController.text.isEmpty && state.draft.author.isNotEmpty) {
-      authorController.text = state.draft.author;
-    }
+  void _offerStartingOver(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      duration: const Duration(seconds: 6),
+      content: const Text('We restored the article you left unfinished.'),
+      action: SnackBarAction(label: 'Start over', onPressed: context.read<PublishArticleCubit>().startOver),
+    ));
   }
 
   void _onStateChanged(BuildContext context, PublishArticleState state) {
@@ -176,6 +186,8 @@ class PublishArticleForm extends HookWidget {
       Navigator.pop(context, true);
     } else if (state is PublishArticleFailure) {
       _showFailure(context, state.reason);
+    } else if (state is PublishArticleDraftLoaded && state.isRestored) {
+      _offerStartingOver(context);
     }
   }
 
@@ -198,22 +210,35 @@ class PublishArticleForm extends HookWidget {
   Future<void> _onLeaveBlocked(BuildContext context, bool didPop) async {
     final cubit = context.read<PublishArticleCubit>();
     if (didPop || cubit.state is PublishArticlePublishing) return;
-    final shouldDiscard = await _confirmDiscard(context);
-    if (shouldDiscard && context.mounted) Navigator.pop(context);
+    final choice = await _askWhatToDoWithDraft(context);
+    if (choice == _LeaveChoice.keepWriting) return;
+    if (choice == _LeaveChoice.discardDraft) await cubit.discardDraft();
+    // When saving, the cubit stores the latest changes as it closes.
+    if (context.mounted) Navigator.pop(context);
   }
 
-  Future<bool> _confirmDiscard(BuildContext context) async {
-    final shouldDiscard = await showDialog<bool>(
+  Future<_LeaveChoice> _askWhatToDoWithDraft(BuildContext context) async {
+    final choice = await showDialog<_LeaveChoice>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Discard this article?'),
-        content: const Text('What you have written will be lost.'),
+        title: const Text('Save this article as a draft?'),
+        content: const Text('You can finish it the next time you tap +.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Keep writing')),
-          TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Discard')),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, _LeaveChoice.keepWriting),
+            child: const Text('Keep writing'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, _LeaveChoice.discardDraft),
+            child: const Text('Discard'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, _LeaveChoice.saveDraft),
+            child: const Text('Save draft'),
+          ),
         ],
       ),
     );
-    return shouldDiscard ?? false;
+    return choice ?? _LeaveChoice.keepWriting;
   }
 }

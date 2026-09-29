@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -7,9 +8,11 @@ import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_draft.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_thumbnail.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/invalid_article_draft_exception.dart';
-import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/get_saved_author_name.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/discard_draft.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/pick_thumbnail_from_gallery.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/publish_article.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/resume_draft.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/save_draft.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/publish_article/publish_article_cubit.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/publish_article/publish_article_state.dart';
 
@@ -19,7 +22,11 @@ class MockPublishArticleUseCase extends Mock implements PublishArticleUseCase {}
 
 class MockPickThumbnailFromGalleryUseCase extends Mock implements PickThumbnailFromGalleryUseCase {}
 
-class MockGetSavedAuthorNameUseCase extends Mock implements GetSavedAuthorNameUseCase {}
+class MockResumeDraftUseCase extends Mock implements ResumeDraftUseCase {}
+
+class MockSaveDraftUseCase extends Mock implements SaveDraftUseCase {}
+
+class MockDiscardDraftUseCase extends Mock implements DiscardDraftUseCase {}
 
 const thumbnail = ArticleThumbnailEntity(localPath: '/gallery/photo.jpg', sizeInBytes: 1024);
 
@@ -33,7 +40,9 @@ const validDraft = ArticleDraftEntity(
 void main() {
   late MockPublishArticleUseCase publishArticle;
   late MockPickThumbnailFromGalleryUseCase pickThumbnail;
-  late MockGetSavedAuthorNameUseCase getSavedAuthorName;
+  late MockResumeDraftUseCase resumeDraft;
+  late MockSaveDraftUseCase saveDraft;
+  late MockDiscardDraftUseCase discardDraft;
   late PublishArticleCubit cubit;
 
   setUpAll(() => registerFallbackValue(const ArticleDraftEntity()));
@@ -41,8 +50,12 @@ void main() {
   setUp(() {
     publishArticle = MockPublishArticleUseCase();
     pickThumbnail = MockPickThumbnailFromGalleryUseCase();
-    getSavedAuthorName = MockGetSavedAuthorNameUseCase();
-    cubit = PublishArticleCubit(publishArticle, pickThumbnail, getSavedAuthorName);
+    resumeDraft = MockResumeDraftUseCase();
+    saveDraft = MockSaveDraftUseCase();
+    discardDraft = MockDiscardDraftUseCase();
+    cubit = PublishArticleCubit(publishArticle, pickThumbnail, resumeDraft, saveDraft, discardDraft);
+    when(() => saveDraft(params: any(named: 'params'))).thenAnswer((_) async => const DataSuccess(null));
+    when(() => discardDraft()).thenAnswer((_) async => const DataSuccess(null));
   });
 
   tearDown(() => cubit.close());
@@ -199,48 +212,135 @@ void main() {
     });
   });
 
-  group('saved signature', () {
-    test('prefills the signature of the previous article', () async {
-      when(() => getSavedAuthorName()).thenAnswer((_) async => const DataSuccess('Daily News Staff'));
+  group('resuming a draft', () {
+    void givenDraftToResume(ArticleDraftEntity draft) {
+      when(() => resumeDraft()).thenAnswer((_) async => DataSuccess(draft));
+    }
 
-      await cubit.loadSavedAuthorName();
+    test('shows the draft left unfinished, telling it was restored', () async {
+      givenDraftToResume(validDraft);
 
-      expect(cubit.state.draft.author, 'Daily News Staff');
+      await cubit.resumeDraft();
+
+      expect(cubit.state, const PublishArticleDraftLoaded(validDraft, isRestored: true));
     });
 
-    test('never overwrites a signature the journalist already typed', () async {
-      when(() => getSavedAuthorName()).thenAnswer((_) async => const DataSuccess('Daily News Staff'));
+    test('starts a new draft signed like the previous article', () async {
+      givenDraftToResume(const ArticleDraftEntity(author: 'Daily News Staff'));
+
+      await cubit.resumeDraft();
+
+      expect(cubit.state, const PublishArticleDraftLoaded(ArticleDraftEntity(author: 'Daily News Staff'), isRestored: false));
+    });
+
+    test('never overwrites what the journalist already typed', () async {
+      givenDraftToResume(validDraft);
       cubit.changeAuthor('Someone else');
 
-      await cubit.loadSavedAuthorName();
+      await cubit.resumeDraft();
 
-      expect(cubit.state.draft.author, 'Someone else');
+      expect(cubit.state.draft, const ArticleDraftEntity(author: 'Someone else'));
     });
 
-    test('leaves the signature empty when none was saved', () async {
-      when(() => getSavedAuthorName()).thenAnswer((_) async => const DataSuccess(null));
+    test('starting over discards the saved draft and keeps the signature', () async {
+      givenDraftToResume(validDraft);
+      await cubit.resumeDraft();
 
-      final states = await statesEmittedBy(cubit, cubit.loadSavedAuthorName);
+      await cubit.startOver();
 
-      expect(states, isEmpty);
+      verify(() => discardDraft()).called(1);
+      expect(cubit.state, PublishArticleDraftLoaded(ArticleDraftEntity(author: validDraft.author), isRestored: false));
     });
   });
 
-  group('hasUnsavedChanges', () {
+  group('saving the draft', () {
+    test('saves it once the journalist pauses typing', () {
+      // Its own cubit: work started under fake time only completes under fake time.
+      fakeAsync((time) {
+        final cubit = PublishArticleCubit(publishArticle, pickThumbnail, resumeDraft, saveDraft, discardDraft)
+          ..changeTitle('T')
+          ..changeTitle('Ti');
+        time.elapse(PublishArticleCubit.draftSavingDelay ~/ 2);
+        verifyNever(() => saveDraft(params: any(named: 'params')));
+
+        time.elapse(PublishArticleCubit.draftSavingDelay);
+
+        verify(() => saveDraft(params: const ArticleDraftEntity(title: 'Ti'))).called(1);
+        cubit.close();
+        time.flushMicrotasks();
+      });
+    });
+
+    test('saves the latest changes right away when the form is closed', () async {
+      cubit.changeContent('Unfinished');
+
+      await cubit.close();
+
+      verify(() => saveDraft(params: const ArticleDraftEntity(content: 'Unfinished'))).called(1);
+    });
+
+    test('saves it before publishing, so it survives a failed publication', () async {
+      fillInValidDraft();
+      await cubit.pickThumbnail();
+      givenPublishResult(DataFailed(Exception('network down')));
+
+      await cubit.publish();
+
+      verifyInOrder([
+        () => saveDraft(params: validDraft),
+        () => publishArticle(params: validDraft),
+      ]);
+    });
+
+    test('saves one draft at a time, in the order they were written', () async {
+      final firstSave = Completer<DataState<void>>();
+      final saved = <String>[];
+      when(() => saveDraft(params: any(named: 'params'))).thenAnswer((invocation) async {
+        final draft = invocation.namedArguments[#params] as ArticleDraftEntity;
+        if (saved.isEmpty && !firstSave.isCompleted) await firstSave.future;
+        saved.add(draft.title);
+        return const DataSuccess(null);
+      });
+      fillInValidDraft();
+      await cubit.pickThumbnail();
+      givenPublishResult(DataFailed(Exception('network down')));
+      final publishing = cubit.publish(); // saves "Breaking News!" and waits
+      await Future<void>.delayed(Duration.zero);
+
+      firstSave.complete(const DataSuccess(null));
+      await publishing;
+      cubit.changeTitle('Second');
+      await cubit.close();
+
+      expect(saved, ['Breaking News!', 'Second']);
+    });
+
+    test('discarding drops the changes not saved yet', () async {
+      cubit.changeTitle('Unwanted');
+
+      await cubit.discardDraft();
+      await cubit.close();
+
+      verify(() => discardDraft()).called(1);
+      verifyNever(() => saveDraft(params: any(named: 'params')));
+    });
+  });
+
+  group('hasStartedWriting', () {
     test('is false for an untouched draft', () {
-      expect(cubit.state.hasUnsavedChanges, isFalse);
+      expect(cubit.state.hasStartedWriting, isFalse);
     });
 
     test('is false when only the prefilled signature is there', () {
       cubit.changeAuthor('Daily News Staff');
 
-      expect(cubit.state.hasUnsavedChanges, isFalse);
+      expect(cubit.state.hasStartedWriting, isFalse);
     });
 
     test('is true once the journalist has written something', () {
       cubit.changeContent('A');
 
-      expect(cubit.state.hasUnsavedChanges, isTrue);
+      expect(cubit.state.hasStartedWriting, isTrue);
     });
   });
 }

@@ -9,9 +9,8 @@ sealed class PublishArticleState extends Equatable {
 
   const PublishArticleState(this.draft);
 
-  /// Whether leaving would lose the journalist's work. The signature alone does not count:
-  /// it is prefilled from the previous article and remembered anyway.
-  bool get hasUnsavedChanges => draft.title.isNotEmpty || draft.content.isNotEmpty || draft.thumbnail != null;
+  /// Whether the journalist has started writing, so leaving must ask what to do with the draft.
+  bool get hasStartedWriting => !draft.isBlank;
 
   /// Field errors to show. Empty until the journalist first tries to publish.
   Set<ArticleDraftError> get visibleErrors => const {};
@@ -23,6 +22,18 @@ sealed class PublishArticleState extends Equatable {
 /// Initial state, and the state the form returns to after any edit.
 final class PublishArticleEditing extends PublishArticleState {
   const PublishArticleEditing(super.draft);
+}
+
+/// A draft replaced the content of the form: the one resumed when opening it, or a new one after
+/// starting over. The form fields show it.
+final class PublishArticleDraftLoaded extends PublishArticleState {
+  /// Whether it is a draft the journalist left unfinished, rather than a new one.
+  final bool isRestored;
+
+  const PublishArticleDraftLoaded(super.draft, {required this.isRestored});
+
+  @override
+  List<Object?> get props => [draft, isRestored];
 }
 
 final class PublishArticleInvalid extends PublishArticleState {

@@ -4,6 +4,7 @@ import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_draft.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_thumbnail.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/invalid_article_draft_exception.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/repository/article_draft_repository.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/repository/author_signature_repository.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/repository/published_article_repository.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/publish_article.dart';
@@ -11,6 +12,8 @@ import 'package:news_app_clean_architecture/features/journalist_articles/domain/
 class MockPublishedArticleRepository extends Mock implements PublishedArticleRepository {}
 
 class MockAuthorSignatureRepository extends Mock implements AuthorSignatureRepository {}
+
+class MockArticleDraftRepository extends Mock implements ArticleDraftRepository {}
 
 const validDraft = ArticleDraftEntity(
   title: 'Breaking News!',
@@ -22,6 +25,7 @@ const validDraft = ArticleDraftEntity(
 void main() {
   late MockPublishedArticleRepository repository;
   late MockAuthorSignatureRepository signatures;
+  late MockArticleDraftRepository drafts;
   late PublishArticleUseCase publishArticle;
 
   setUpAll(() => registerFallbackValue(const ArticleDraftEntity()));
@@ -29,9 +33,11 @@ void main() {
   setUp(() {
     repository = MockPublishedArticleRepository();
     signatures = MockAuthorSignatureRepository();
-    publishArticle = PublishArticleUseCase(repository, signatures);
+    drafts = MockArticleDraftRepository();
+    publishArticle = PublishArticleUseCase(repository, signatures, drafts);
     when(() => repository.publishArticle(any())).thenAnswer((_) async => const DataSuccess(null));
     when(() => signatures.saveAuthorName(any())).thenAnswer((_) async => const DataSuccess(null));
+    when(() => drafts.deleteSavedDraft()).thenAnswer((_) async => const DataSuccess(null));
   });
 
   test('publishes a valid draft through the repository', () async {
@@ -59,6 +65,26 @@ void main() {
     await publishArticle(params: validDraft);
 
     verifyNever(() => signatures.saveAuthorName(any()));
+  });
+
+  test('deletes the saved draft once the article is published', () async {
+    await publishArticle(params: validDraft);
+
+    verify(() => drafts.deleteSavedDraft()).called(1);
+  });
+
+  test('keeps the saved draft when publishing fails', () async {
+    when(() => repository.publishArticle(any())).thenAnswer((_) async => DataFailed(Exception('offline')));
+
+    await publishArticle(params: validDraft);
+
+    verifyNever(() => drafts.deleteSavedDraft());
+  });
+
+  test('is still a success when the device cannot be updated', () async {
+    when(() => drafts.deleteSavedDraft()).thenAnswer((_) async => DataFailed(Exception('disk full')));
+
+    expect(await publishArticle(params: validDraft), isA<DataSuccess<void>>());
   });
 
   test('is still a success when the signature cannot be remembered', () async {

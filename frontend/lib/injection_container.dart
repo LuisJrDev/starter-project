@@ -13,30 +13,36 @@ import 'package:news_app_clean_architecture/features/daily_news/data/repository/
 import 'package:news_app_clean_architecture/features/daily_news/domain/repository/article_repository.dart';
 import 'package:news_app_clean_architecture/features/daily_news/domain/usecases/get_article.dart';
 import 'package:news_app_clean_architecture/features/daily_news/presentation/bloc/article/remote/remote_article_bloc.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'features/daily_news/data/data_sources/local/app_database.dart';
 import 'features/daily_news/domain/usecases/get_saved_article.dart';
 import 'features/daily_news/domain/usecases/remove_article.dart';
 import 'features/daily_news/domain/usecases/save_article.dart';
 import 'features/daily_news/presentation/bloc/article/local/local_article_bloc.dart';
+import 'features/journalist_articles/data/data_sources/local/article_draft_local_data_source.dart';
 import 'features/journalist_articles/data/data_sources/local/author_signature_local_data_source.dart';
 import 'features/journalist_articles/data/data_sources/local/gallery_image_data_source.dart';
 import 'features/journalist_articles/data/data_sources/local/text_to_speech_data_source.dart';
 import 'features/journalist_articles/data/data_sources/remote/article_thumbnail_storage_data_source.dart';
 import 'features/journalist_articles/data/data_sources/remote/published_articles_firestore_data_source.dart';
 import 'features/journalist_articles/data/repository/article_narrator_repository_impl.dart';
+import 'features/journalist_articles/data/repository/article_draft_repository_impl.dart';
 import 'features/journalist_articles/data/repository/author_signature_repository_impl.dart';
 import 'features/journalist_articles/data/repository/published_article_repository_impl.dart';
 import 'features/journalist_articles/data/repository/thumbnail_picker_repository_impl.dart';
 import 'features/journalist_articles/domain/repository/article_narrator_repository.dart';
+import 'features/journalist_articles/domain/repository/article_draft_repository.dart';
 import 'features/journalist_articles/domain/repository/author_signature_repository.dart';
 import 'features/journalist_articles/domain/repository/published_article_repository.dart';
 import 'features/journalist_articles/domain/repository/thumbnail_picker_repository.dart';
 import 'features/journalist_articles/domain/usecases/get_published_articles.dart';
-import 'features/journalist_articles/domain/usecases/get_saved_author_name.dart';
+import 'features/journalist_articles/domain/usecases/discard_draft.dart';
 import 'features/journalist_articles/domain/usecases/pick_thumbnail_from_gallery.dart';
 import 'features/journalist_articles/domain/usecases/publish_article.dart';
 import 'features/journalist_articles/domain/usecases/read_article_aloud.dart';
+import 'features/journalist_articles/domain/usecases/resume_draft.dart';
+import 'features/journalist_articles/domain/usecases/save_draft.dart';
 import 'features/journalist_articles/domain/usecases/stop_reading_aloud.dart';
 import 'features/journalist_articles/presentation/bloc/article_narration/article_narration_cubit.dart';
 import 'features/journalist_articles/presentation/bloc/publish_article/publish_article_cubit.dart';
@@ -110,8 +116,11 @@ Future<void> _registerJournalistArticles() async {
   );
   sl.registerSingleton<ArticleThumbnailStorageDataSource>(ArticleThumbnailStorageDataSource(FirebaseStorage.instance));
   sl.registerSingleton<GalleryImageDataSource>(GalleryImageDataSource(ImagePicker()));
-  sl.registerSingleton<AuthorSignatureLocalDataSource>(
-    AuthorSignatureLocalDataSource(await SharedPreferences.getInstance()),
+  final preferences = await SharedPreferences.getInstance();
+  sl.registerSingleton<AuthorSignatureLocalDataSource>(AuthorSignatureLocalDataSource(preferences));
+  final appSupportDirectory = await getApplicationSupportDirectory();
+  sl.registerSingleton<ArticleDraftLocalDataSource>(
+    ArticleDraftLocalDataSource(preferences, Directory('${appSupportDirectory.path}/journalist_articles_draft')),
   );
   sl.registerSingleton<TextToSpeechDataSource>(TextToSpeechDataSource(FlutterTts()));
 
@@ -119,18 +128,21 @@ Future<void> _registerJournalistArticles() async {
   sl.registerSingleton<PublishedArticleRepository>(PublishedArticleRepositoryImpl(sl(), sl()));
   sl.registerSingleton<ThumbnailPickerRepository>(ThumbnailPickerRepositoryImpl(sl()));
   sl.registerSingleton<AuthorSignatureRepository>(AuthorSignatureRepositoryImpl(sl()));
+  sl.registerSingleton<ArticleDraftRepository>(ArticleDraftRepositoryImpl(sl()));
   sl.registerSingleton<ArticleNarratorRepository>(ArticleNarratorRepositoryImpl(sl()));
 
   // Use cases
-  sl.registerSingleton<PublishArticleUseCase>(PublishArticleUseCase(sl(), sl()));
+  sl.registerSingleton<PublishArticleUseCase>(PublishArticleUseCase(sl(), sl(), sl()));
   sl.registerSingleton<GetPublishedArticlesUseCase>(GetPublishedArticlesUseCase(sl()));
   sl.registerSingleton<PickThumbnailFromGalleryUseCase>(PickThumbnailFromGalleryUseCase(sl()));
-  sl.registerSingleton<GetSavedAuthorNameUseCase>(GetSavedAuthorNameUseCase(sl()));
+  sl.registerSingleton<ResumeDraftUseCase>(ResumeDraftUseCase(sl(), sl()));
+  sl.registerSingleton<SaveDraftUseCase>(SaveDraftUseCase(sl()));
+  sl.registerSingleton<DiscardDraftUseCase>(DiscardDraftUseCase(sl()));
   sl.registerSingleton<ReadArticleAloudUseCase>(ReadArticleAloudUseCase(sl()));
   sl.registerSingleton<StopReadingAloudUseCase>(StopReadingAloudUseCase(sl()));
 
   // Cubits
-  sl.registerFactory<PublishArticleCubit>(() => PublishArticleCubit(sl(), sl(), sl()));
+  sl.registerFactory<PublishArticleCubit>(() => PublishArticleCubit(sl(), sl(), sl(), sl(), sl()));
   sl.registerFactory<PublishedArticlesCubit>(() => PublishedArticlesCubit(sl()));
   sl.registerFactory<ArticleNarrationCubit>(() => ArticleNarrationCubit(sl(), sl()));
 }

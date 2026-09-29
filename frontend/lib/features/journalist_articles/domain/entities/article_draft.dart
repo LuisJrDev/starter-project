@@ -93,6 +93,10 @@ class ArticleDraftEntity extends Equatable {
 
   bool get isValid => errors.isEmpty;
 
+  /// Nothing written or picked yet. The signature alone does not count: it is prefilled from the
+  /// journalist's previous article.
+  bool get isBlank => title.trim().isEmpty && content.trim().isEmpty && thumbnail == null;
+
   /// Plain-text excerpt of [content] shown in article lists.
   String get description {
     return _truncateWithoutSplittingCharacters(markdownToPlainText(content), descriptionMaxLength);

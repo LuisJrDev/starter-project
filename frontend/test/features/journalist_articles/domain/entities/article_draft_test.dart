@@ -139,4 +139,23 @@ void main() {
       expect(validDraft.title, 'Breaking News!');
     });
   });
+
+  group('isBlank', () {
+    test('is true for a new draft, even signed', () {
+      expect(const ArticleDraftEntity().isBlank, isTrue);
+      expect(const ArticleDraftEntity(author: 'Daily News Staff').isBlank, isTrue);
+    });
+
+    test('ignores whitespace', () {
+      expect(const ArticleDraftEntity(title: ' ', content: '\n\n').isBlank, isTrue);
+    });
+
+    test('is false once there is a title, content or thumbnail', () {
+      const thumbnail = ArticleThumbnailEntity(localPath: '/gallery/photo.jpg', sizeInBytes: 1024);
+
+      expect(const ArticleDraftEntity(title: 'T').isBlank, isFalse);
+      expect(const ArticleDraftEntity(content: 'C').isBlank, isFalse);
+      expect(const ArticleDraftEntity(thumbnail: thumbnail).isBlank, isFalse);
+    });
+  });
 }
