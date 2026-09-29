@@ -1,6 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:news_app_clean_architecture/config/theme/app_themes.dart';
+
 import '../../domain/entities/article.dart';
 
 class ArticleWidget extends StatelessWidget {
@@ -65,7 +67,6 @@ class ArticleWidget extends StatelessWidget {
                 fontFamily: 'Butler',
                 fontWeight: FontWeight.w900,
                 fontSize: 18,
-                color: Colors.black87,
               ),
             ),
 
@@ -141,7 +142,7 @@ class _ArticleImageFrame extends StatelessWidget {
         child: Container(
           width: MediaQuery.of(context).size.width / 3,
           height: double.maxFinite,
-          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.08), image: image),
+          decoration: BoxDecoration(color: placeholderColorOf(context), image: image),
           child: child,
         ),
       ),

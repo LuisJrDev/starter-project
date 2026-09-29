@@ -45,15 +45,12 @@ class DailyNews extends StatelessWidget {
 
   PreferredSizeWidget _buildAppbar(BuildContext context) {
     return AppBar(
-      title: const Text(
-        'Daily News',
-        style: TextStyle(color: Colors.black),
-      ),
+      title: const Text('Daily News'),
       actions: [
         IconButton(
           tooltip: 'Saved articles',
           onPressed: () => _onShowSavedArticlesViewTapped(context),
-          icon: const Icon(Icons.bookmark, color: Colors.black),
+          icon: const Icon(Icons.bookmark),
         ),
       ],
       bottom: const TabBar(

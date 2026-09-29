@@ -40,7 +40,7 @@ class PublishedArticleDetail extends StatelessWidget {
       appBar: AppBar(
         leading: IconButton(
           tooltip: 'Back',
-          icon: const Icon(Ionicons.chevron_back, color: Colors.black),
+          icon: const Icon(Ionicons.chevron_back),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -72,12 +72,8 @@ class PublishedArticleDetail extends StatelessWidget {
         children: [
           Text(
             article.title,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              height: 1.25,
-              backgroundColor: progress?.sentenceIndex == 0 ? readAloudHighlightColor : null,
-            ),
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900, height: 1.25)
+                .merge(progress?.sentenceIndex == 0 ? readAloudHighlightStyle : null),
           ),
           const SizedBox(height: 12),
           PublishedArticleByline(article: article, showsReadingTime: true),

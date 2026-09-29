@@ -87,10 +87,10 @@ class PublishArticleForm extends HookWidget {
     return AppBar(
       leading: IconButton(
         tooltip: 'Back',
-        icon: const Icon(Ionicons.chevron_back, color: Colors.black),
+        icon: const Icon(Ionicons.chevron_back),
         onPressed: () => Navigator.maybePop(context),
       ),
-      title: const Text('Publish Article', style: TextStyle(color: Colors.black)),
+      title: const Text('Publish Article'),
     );
   }
 

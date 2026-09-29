@@ -6,6 +6,9 @@ import '../../domain/entities/article_narration_progress.dart';
 /// Highlighter yellow behind the sentence being read aloud.
 const Color readAloudHighlightColor = Color(0xFFFFE58F);
 
+/// Dark text on the yellow highlight, readable in the light and the dark theme.
+const TextStyle readAloudHighlightStyle = TextStyle(backgroundColor: readAloudHighlightColor, color: Colors.black87);
+
 /// The article content while it is read aloud: the sentence being read is highlighted and the
 /// page scrolls to keep it in view, so readers can follow along.
 class FollowAlongText extends StatefulWidget {
@@ -96,7 +99,7 @@ class _FollowAlongTextState extends State<FollowAlongText> {
   TextSpan _sentenceSpan(String sentence, {required bool isCurrent}) {
     return TextSpan(
       text: sentence,
-      style: isCurrent ? const TextStyle(backgroundColor: readAloudHighlightColor) : null,
+      style: isCurrent ? readAloudHighlightStyle : null,
     );
   }
 

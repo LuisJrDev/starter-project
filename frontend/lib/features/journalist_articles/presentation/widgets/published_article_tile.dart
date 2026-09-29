@@ -3,6 +3,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:news_app_clean_architecture/config/theme/app_themes.dart';
+
 import '../../domain/entities/published_article.dart';
 
 String publishedArticleHeroTag(PublishedArticleEntity article) => 'published-article-${article.id}';
@@ -59,7 +61,7 @@ class PublishedArticleTile extends StatelessWidget {
             article.title,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18, color: Colors.black87),
+            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
           ),
           Expanded(
             child: Padding(
@@ -110,6 +112,6 @@ class _ImagePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(color: Colors.black.withValues(alpha: 0.08), child: Center(child: child));
+    return ColoredBox(color: placeholderColorOf(context), child: Center(child: child));
   }
 }
