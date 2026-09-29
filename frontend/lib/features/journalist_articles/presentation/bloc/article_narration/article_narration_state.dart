@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../domain/entities/article_narration_progress.dart';
+
 sealed class ArticleNarrationState extends Equatable {
   const ArticleNarrationState();
 
@@ -12,7 +14,13 @@ final class ArticleNarrationIdle extends ArticleNarrationState {
 }
 
 final class ArticleNarrationReading extends ArticleNarrationState {
-  const ArticleNarrationReading();
+  /// The sentence being read, or `null` while the voice is being prepared.
+  final ArticleNarrationProgressEntity? progress;
+
+  const ArticleNarrationReading({this.progress});
+
+  @override
+  List<Object?> get props => [progress];
 }
 
 /// The device has no usable text-to-speech engine.

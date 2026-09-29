@@ -74,22 +74,25 @@ class PublishedArticleTile extends StatelessWidget {
   }
 }
 
-/// "Author · Sep 28, 2026" line shown under article titles.
+/// "Author · Sep 28, 2026" line shown under article titles, followed by " · 4 min read" when
+/// [showsReadingTime] (there is no room for it in the list tiles).
 class PublishedArticleByline extends StatelessWidget {
   final PublishedArticleEntity article;
+  final bool showsReadingTime;
 
-  const PublishedArticleByline({super.key, required this.article});
+  const PublishedArticleByline({super.key, required this.article, this.showsReadingTime = false});
 
   @override
   Widget build(BuildContext context) {
     final date = DateFormat.yMMMd().format(article.publishedAt.toLocal());
+    final readingTime = showsReadingTime ? ' · ${article.readingTimeInMinutes} min read' : '';
     return Row(
       children: [
         const Icon(Icons.edit_note, size: 18),
         const SizedBox(width: 4),
         Expanded(
           child: Text(
-            '${article.author} · $date',
+            '${article.author} · $date$readingTime',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontSize: 12),

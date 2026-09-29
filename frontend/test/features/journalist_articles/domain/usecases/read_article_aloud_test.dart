@@ -22,22 +22,22 @@ final article = PublishedArticleEntity(
 void main() {
   late MockArticleNarratorRepository repository;
 
-  setUpAll(() => registerFallbackValue(const ArticleNarrationEntity(text: '', languageTag: 'en-US')));
+  setUpAll(() => registerFallbackValue(const ArticleNarrationEntity(parts: [], languageTag: 'en-US')));
 
   setUp(() {
     repository = MockArticleNarratorRepository();
-    when(() => repository.read(any())).thenAnswer((_) async => const DataSuccess(null));
+    when(() => repository.read(any())).thenAnswer((_) => const Stream.empty());
     when(() => repository.stopReading()).thenAnswer((_) async => const DataSuccess(null));
   });
 
   test('reads the narration of the article', () async {
-    await ReadArticleAloudUseCase(repository)(params: article);
+    await ReadArticleAloudUseCase(repository)(params: article).drain<void>();
 
     verify(() => repository.read(ArticleNarrationEntity.of(article))).called(1);
   });
 
   test('does nothing without an article', () async {
-    await ReadArticleAloudUseCase(repository)();
+    expect(await ReadArticleAloudUseCase(repository)().toList(), isEmpty);
 
     verifyNever(() => repository.read(any()));
   });

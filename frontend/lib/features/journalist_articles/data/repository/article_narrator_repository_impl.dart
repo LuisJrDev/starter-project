@@ -1,6 +1,7 @@
 import 'package:news_app_clean_architecture/core/resources/data_state.dart';
 
 import '../../domain/entities/article_narration.dart';
+import '../../domain/entities/article_narration_progress.dart';
 import '../../domain/repository/article_narrator_repository.dart';
 import '../data_sources/local/text_to_speech_data_source.dart';
 
@@ -10,12 +11,13 @@ class ArticleNarratorRepositoryImpl implements ArticleNarratorRepository {
   ArticleNarratorRepositoryImpl(this._textToSpeechDataSource);
 
   @override
-  Future<DataState<void>> read(ArticleNarrationEntity narration) async {
+  Stream<DataState<ArticleNarrationProgressEntity>> read(ArticleNarrationEntity narration) async* {
     try {
-      await _textToSpeechDataSource.speak(narration);
-      return const DataSuccess(null);
+      await for (final sentenceIndex in _textToSpeechDataSource.speak(narration)) {
+        yield DataSuccess(ArticleNarrationProgressEntity(narration: narration, sentenceIndex: sentenceIndex));
+      }
     } on Exception catch (error) {
-      return DataFailed(error);
+      yield DataFailed(error);
     }
   }
 

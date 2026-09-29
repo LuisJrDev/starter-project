@@ -5,11 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:news_app_clean_architecture/core/resources/data_state.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_narration.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_narration_progress.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/published_article.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/read_article_aloud.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/stop_reading_aloud.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/bloc/article_narration/article_narration_cubit.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/presentation/pages/published_article_detail/published_article_detail.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/presentation/widgets/follow_along_text.dart';
 
 class MockReadArticleAloudUseCase extends Mock implements ReadArticleAloudUseCase {}
 
@@ -18,8 +21,8 @@ class MockStopReadingAloudUseCase extends Mock implements StopReadingAloudUseCas
 final article = PublishedArticleEntity(
   id: 'article-1',
   title: 'Breaking News',
-  content: '## Subtitle\n\nThis is **breaking** news.',
-  description: 'Subtitle This is breaking news.',
+  content: '## Subtitle\n\nThis is **breaking** news. It happened today.',
+  description: 'Subtitle This is breaking news. It happened today.',
   author: 'Daily News Staff',
   thumbnailUrl: 'https://example.com/1.jpg',
   publishedAt: DateTime.utc(2026, 9, 28),
@@ -28,7 +31,7 @@ final article = PublishedArticleEntity(
 void main() {
   late MockReadArticleAloudUseCase readAloud;
   late MockStopReadingAloudUseCase stopReading;
-  late Completer<DataState<void>> reading;
+  late StreamController<DataState<ArticleNarrationProgressEntity>> reading;
 
   setUpAll(() => registerFallbackValue(article));
 
@@ -37,10 +40,10 @@ void main() {
   void stubReadingAloud() {
     readAloud = MockReadArticleAloudUseCase();
     stopReading = MockStopReadingAloudUseCase();
-    reading = Completer();
-    when(() => readAloud(params: any(named: 'params'))).thenAnswer((_) => reading.future);
+    reading = StreamController();
+    when(() => readAloud(params: any(named: 'params'))).thenAnswer((_) => reading.stream);
     when(() => stopReading()).thenAnswer((_) async {
-      if (!reading.isCompleted) reading.complete(const DataSuccess(null));
+      unawaited(reading.close());
       return const DataSuccess(null);
     });
   }
@@ -58,10 +61,64 @@ void main() {
     ));
   }
 
-  testWidgets('renders the Markdown content', (tester) async {
+  /// The sentences shown with the read-aloud highlight.
+  List<String> highlightedSentences(WidgetTester tester) {
+    final highlighted = <String>[];
+    for (final text in tester.widgetList<RichText>(find.byType(RichText))) {
+      text.text.visitChildren((span) {
+        final isHighlighted = span.style?.backgroundColor == readAloudHighlightColor;
+        if (isHighlighted && span is TextSpan) highlighted.add(span.text!);
+        return true;
+      });
+    }
+    return highlighted;
+  }
+
+  Future<void> readSentence(WidgetTester tester, int index) async {
+    reading.add(DataSuccess(ArticleNarrationProgressEntity(
+      narration: ArticleNarrationEntity.of(article),
+      sentenceIndex: index,
+    )));
+    await tester.pumpAndSettle(); // content transition, scroll and progress bar animations
+  }
+
+  testWidgets('renders the Markdown content and the reading time', (tester) async {
     await openArticle(tester);
 
     expect(find.textContaining('Subtitle', findRichText: true), findsOneWidget);
+    expect(find.textContaining('1 min read'), findsOneWidget);
+  });
+
+  testWidgets('highlights each sentence while it is read aloud', (tester) async {
+    await openArticle(tester);
+    await tester.tap(find.text('Listen to this article'));
+    await tester.pump();
+
+    await readSentence(tester, 0);
+    expect(highlightedSentences(tester), ['Breaking News']);
+
+    await readSentence(tester, 3);
+    expect(find.byType(FollowAlongText), findsOneWidget);
+    expect(highlightedSentences(tester), ['This is breaking news.']);
+
+    await readSentence(tester, 4);
+    expect(highlightedSentences(tester), ['It happened today.']);
+    expect(tester.widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator)).value, 1);
+  });
+
+  testWidgets('shows the Markdown content again when the reading ends', (tester) async {
+    await openArticle(tester);
+    await tester.tap(find.text('Listen to this article'));
+    await tester.pump();
+    await readSentence(tester, 3);
+
+    await reading.close();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FollowAlongText), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(highlightedSentences(tester), isEmpty);
+    expect(find.text('Listen to this article'), findsOneWidget);
   });
 
   testWidgets('listening turns the button into Stop, and stopping turns it back', (tester) async {
@@ -81,7 +138,8 @@ void main() {
 
   testWidgets('explains when the device cannot read aloud', (tester) async {
     await openArticle(tester);
-    reading.complete(DataFailed(Exception('no engine')));
+    reading.add(DataFailed(Exception('no engine')));
+    unawaited(reading.close());
 
     await tester.tap(find.text('Listen to this article'));
     await tester.pump();

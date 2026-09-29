@@ -6,7 +6,12 @@ import 'package:news_app_clean_architecture/features/journalist_articles/domain/
 
 class MockFlutterTts extends Mock implements FlutterTts {}
 
-const narration = ArticleNarrationEntity(text: 'Title. Written by Me. Body.', languageTag: 'es-ES');
+ArticleNarrationEntity narrationOf(List<String> sentences, {String languageTag = 'en-US'}) {
+  return ArticleNarrationEntity(
+    parts: [NarrationPart(NarrationPartKind.paragraph, sentences)],
+    languageTag: languageTag,
+  );
+}
 
 void main() {
   late MockFlutterTts tts;
@@ -23,64 +28,73 @@ void main() {
     when(() => tts.stop()).thenAnswer((_) async => 1);
   });
 
-  List<String> spokenChunks() => verify(() => tts.speak(captureAny())).captured.cast<String>();
+  List<String> spokenTexts() => verify(() => tts.speak(captureAny())).captured.cast<String>();
 
-  test('reads the narration in the article language, waiting for each chunk to finish', () async {
-    await dataSource.speak(narration);
+  test('reads the sentences one by one in the article language, waiting for each to finish', () async {
+    await dataSource.speak(narrationOf(['Title', 'Written by Me', 'Body.'], languageTag: 'es-ES')).drain<void>();
 
     verify(() => tts.awaitSpeakCompletion(true)).called(1);
     verify(() => tts.setLanguage('es-ES')).called(1);
-    expect(spokenChunks(), ['Title. Written by Me. Body.']);
+    expect(spokenTexts(), ['Title', 'Written by Me', 'Body.']);
+  });
+
+  test('emits the index of each sentence right before reading it', () async {
+    final events = <String>[];
+    when(() => tts.speak(any())).thenAnswer((invocation) async {
+      events.add('speak ${invocation.positionalArguments.single}');
+      return 1;
+    });
+
+    await for (final index in dataSource.speak(narrationOf(['One.', 'Two.']))) {
+      events.add('sentence $index');
+    }
+
+    expect(events, ['sentence 0', 'speak One.', 'sentence 1', 'speak Two.']);
   });
 
   test('keeps the default voice when the article language is not installed', () async {
     when(() => tts.isLanguageAvailable(any())).thenAnswer((_) async => false);
 
-    await dataSource.speak(narration);
+    await dataSource.speak(narrationOf(['Body.'])).drain<void>();
 
     verifyNever(() => tts.setLanguage(any()));
   });
 
-  test('reads long articles in chunks that Android accepts, without losing text', () async {
-    const sentence = 'This sentence has exactly fifty characters in it. ';
-    final longText = (sentence * 200).trim();
+  test('reads a sentence too long for Android in parts, without losing text', () async {
+    final sentence = 'a' * (TextToSpeechDataSource.maxSpeechLength * 2 + 10);
 
-    await dataSource.speak(ArticleNarrationEntity(text: longText, languageTag: 'en-US'));
+    final indexes = await dataSource.speak(narrationOf([sentence])).toList();
 
-    final chunks = spokenChunks();
-    expect(chunks.length, greaterThan(1));
-    expect(chunks.every((chunk) => chunk.length <= TextToSpeechDataSource.maxChunkLength), isTrue);
-    expect(chunks.join(' '), longText);
+    expect(indexes, [0]);
+    expect(spokenTexts().map((part) => part.length), [
+      TextToSpeechDataSource.maxSpeechLength,
+      TextToSpeechDataSource.maxSpeechLength,
+      10,
+    ]);
   });
 
-  test('stops before the next chunk when asked to stop', () async {
-    final longText = ('Sentence number one is here. ' * 400).trim();
+  test('stops before the next sentence when asked to stop', () async {
     when(() => tts.speak(any())).thenAnswer((_) async {
       await dataSource.stop();
       return 1;
     });
 
-    await dataSource.speak(ArticleNarrationEntity(text: longText, languageTag: 'en-US'));
+    final indexes = await dataSource.speak(narrationOf(['One.', 'Two.', 'Three.'])).toList();
 
-    expect(spokenChunks(), hasLength(1));
+    expect(indexes, [0]);
+    expect(spokenTexts(), ['One.']);
     verify(() => tts.stop()).called(1);
   });
 
-  test('throws when the device cannot speak', () async {
-    when(() => tts.speak(any())).thenAnswer((_) async => 0);
+  test('can read again after being stopped', () async {
+    await dataSource.stop();
 
-    expect(() => dataSource.speak(narration), throwsException);
+    expect(await dataSource.speak(narrationOf(['One.'])).toList(), [0]);
   });
 
-  group('splitIntoChunks', () {
-    test('keeps a short text in one chunk', () {
-      expect(TextToSpeechDataSource.splitIntoChunks('One. Two.'), ['One. Two.']);
-    });
+  test('fails when the device cannot speak', () async {
+    when(() => tts.speak(any())).thenAnswer((_) async => 0);
 
-    test('cuts a sentence longer than a chunk', () {
-      final chunks = TextToSpeechDataSource.splitIntoChunks('a' * (TextToSpeechDataSource.maxChunkLength + 10));
-
-      expect(chunks.map((chunk) => chunk.length), [TextToSpeechDataSource.maxChunkLength, 10]);
-    });
+    expect(dataSource.speak(narrationOf(['Body.'])).drain<void>(), throwsException);
   });
 }

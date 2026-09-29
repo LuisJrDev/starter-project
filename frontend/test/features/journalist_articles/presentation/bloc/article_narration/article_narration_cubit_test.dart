@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:news_app_clean_architecture/core/resources/data_state.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_narration.dart';
+import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/article_narration_progress.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/entities/published_article.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/read_article_aloud.dart';
 import 'package:news_app_clean_architecture/features/journalist_articles/domain/usecases/stop_reading_aloud.dart';
@@ -25,11 +27,17 @@ final article = PublishedArticleEntity(
   publishedAt: DateTime.utc(2026, 9, 28),
 );
 
+final narration = ArticleNarrationEntity.of(article);
+
+ArticleNarrationProgressEntity readingSentence(int index) {
+  return ArticleNarrationProgressEntity(narration: narration, sentenceIndex: index);
+}
+
 void main() {
   late MockReadArticleAloudUseCase readAloud;
   late MockStopReadingAloudUseCase stopReading;
   late ArticleNarrationCubit cubit;
-  late Completer<DataState<void>> reading;
+  late StreamController<DataState<ArticleNarrationProgressEntity>> reading;
 
   setUpAll(() => registerFallbackValue(article));
 
@@ -37,10 +45,10 @@ void main() {
     readAloud = MockReadArticleAloudUseCase();
     stopReading = MockStopReadingAloudUseCase();
     cubit = ArticleNarrationCubit(readAloud, stopReading);
-    reading = Completer();
-    when(() => readAloud(params: any(named: 'params'))).thenAnswer((_) => reading.future);
+    reading = StreamController();
+    when(() => readAloud(params: any(named: 'params'))).thenAnswer((_) => reading.stream);
     when(() => stopReading()).thenAnswer((_) async {
-      if (!reading.isCompleted) reading.complete(const DataSuccess(null));
+      unawaited(reading.close());
       return const DataSuccess(null);
     });
   });
@@ -51,19 +59,28 @@ void main() {
     expect(cubit.state, const ArticleNarrationIdle());
   });
 
-  test('reads the article and goes back to idle when it ends', () async {
+  test('follows each sentence being read and goes back to idle when it ends', () async {
     final states = await statesEmittedBy(cubit, () async {
       final toggle = cubit.toggleReading(article);
-      reading.complete(const DataSuccess(null));
+      reading
+        ..add(DataSuccess(readingSentence(0)))
+        ..add(DataSuccess(readingSentence(1)));
+      unawaited(reading.close());
       await toggle;
     });
 
-    expect(states, const [ArticleNarrationReading(), ArticleNarrationIdle()]);
+    expect(states, [
+      const ArticleNarrationReading(),
+      ArticleNarrationReading(progress: readingSentence(0)),
+      ArticleNarrationReading(progress: readingSentence(1)),
+      const ArticleNarrationIdle(),
+    ]);
     verify(() => readAloud(params: article)).called(1);
   });
 
   test('stops when toggled while reading', () async {
     final firstToggle = cubit.toggleReading(article);
+    reading.add(DataSuccess(readingSentence(0)));
     await Future<void>.delayed(Duration.zero);
 
     await cubit.toggleReading(article);
@@ -73,8 +90,19 @@ void main() {
     expect(cubit.state, const ArticleNarrationIdle());
   });
 
+  test('can be stopped while the voice is still being prepared', () async {
+    final firstToggle = cubit.toggleReading(article);
+
+    await cubit.toggleReading(article);
+    await firstToggle;
+
+    verify(() => stopReading()).called(1);
+    expect(cubit.state, const ArticleNarrationIdle());
+  });
+
   test('reports when the device cannot read aloud', () async {
-    reading.complete(DataFailed(Exception('no engine')));
+    reading.add(DataFailed(Exception('no engine')));
+    unawaited(reading.close());
 
     await cubit.toggleReading(article);
 

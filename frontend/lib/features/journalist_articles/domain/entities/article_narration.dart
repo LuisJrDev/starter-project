@@ -3,34 +3,64 @@ import 'package:equatable/equatable.dart';
 import 'markdown_text.dart';
 import 'published_article.dart';
 
-/// What the device reads aloud for an article: title, byline and content as plain sentences
-/// (so the voice pauses after headings and list items), in the article's language.
+enum NarrationPartKind { title, byline, heading, bulletedItem, numberedItem, paragraph }
+
+/// A block of the article (its title, a heading, a paragraph…) split into the sentences read aloud.
+class NarrationPart extends Equatable {
+  final NarrationPartKind kind;
+  final List<String> sentences;
+
+  const NarrationPart(this.kind, this.sentences);
+
+  @override
+  List<Object?> get props => [kind, sentences];
+}
+
+/// What the device reads aloud for an article: title, byline and content as plain sentences,
+/// in the article's language.
 class ArticleNarrationEntity extends Equatable {
   static const String english = 'en-US';
   static const String spanish = 'es-ES';
 
-  final String text;
+  final List<NarrationPart> parts;
 
   /// BCP 47 tag of the voice to use.
   final String languageTag;
 
-  const ArticleNarrationEntity({required this.text, required this.languageTag});
+  const ArticleNarrationEntity({required this.parts, required this.languageTag});
 
   factory ArticleNarrationEntity.of(PublishedArticleEntity article) {
     final contentLines = markdownToPlainLines(article.content);
-    final languageTag = _guessLanguageTag([article.title, ...contentLines].join(' '));
+    final languageTag = _guessLanguageTag([article.title, ...contentLines.map((line) => line.text)].join(' '));
     final byline = '${languageTag == spanish ? 'Escrito por' : 'Written by'} ${article.author}';
-    final sentences = [article.title, byline, ...contentLines].map(_asSentence);
-    return ArticleNarrationEntity(text: sentences.join(' '), languageTag: languageTag);
+    return ArticleNarrationEntity(
+      parts: [
+        NarrationPart(NarrationPartKind.title, [article.title]),
+        NarrationPart(NarrationPartKind.byline, [byline]),
+        ...contentLines.map(_partOf),
+      ],
+      languageTag: languageTag,
+    );
   }
 
+  /// Everything read aloud, in order. The voice pauses after each sentence.
+  List<String> get sentences => [for (final part in parts) ...part.sentences];
+
   @override
-  List<Object?> get props => [text, languageTag];
+  List<Object?> get props => [parts, languageTag];
 }
 
-final _sentenceEnding = RegExp(r'[.!?:;…"]$');
+final _sentenceBoundary = RegExp(r'(?<=[.!?…])\s+');
 
-String _asSentence(String line) => _sentenceEnding.hasMatch(line) ? line : '$line.';
+NarrationPart _partOf(PlainTextLine line) {
+  final kind = switch (line.kind) {
+    PlainLineKind.heading => NarrationPartKind.heading,
+    PlainLineKind.bulletedItem => NarrationPartKind.bulletedItem,
+    PlainLineKind.numberedItem => NarrationPartKind.numberedItem,
+    PlainLineKind.paragraph => NarrationPartKind.paragraph,
+  };
+  return NarrationPart(kind, line.text.split(_sentenceBoundary));
+}
 
 const _spanishWords = {
   'el', 'la', 'los', 'las', 'de', 'del', 'que', 'y', 'en', 'un', 'una', 'es', 'por', 'para', 'con', 'su', 'lo', 'al', 'se',
