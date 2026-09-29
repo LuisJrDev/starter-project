@@ -6,11 +6,11 @@ Cloud Storage) y aparece para todos en la pestaña *Community* de la app.
 
 | | |
 |---|---|
-| Rama | `feature/publish-article` (43 commits, uno por paso) |
+| Rama | `feature/publish-article` (46 commits, uno por paso) |
 | Backend | [`backend/docs/DB_SCHEMA.md`](../backend/docs/DB_SCHEMA.md), [`firestore.rules`](../backend/firestore.rules), [`storage.rules`](../backend/storage.rules) |
 | Frontend | [`frontend/lib/features/journalist_articles/`](../frontend/lib/features/journalist_articles) |
-| Plataformas | Android e iOS (simulador iPhone 17) |
-| Tests | 236 unitarios y de widgets, 66 de reglas de seguridad y 1 de integración de extremo a extremo |
+| Plataformas | Android e iOS (simulador iPhone 17), modo claro y oscuro, inglés y español |
+| Tests | 245 unitarios y de widgets, 66 de reglas de seguridad y 1 de integración de extremo a extremo |
 | CI | [GitHub Actions](../.github/workflows/ci.yml), los tres jobs en verde |
 | Vídeo | [`docs/media/publish-journey.mp4`](./media/publish-journey.mp4) (40 s) |
 
@@ -121,9 +121,9 @@ Markdown.
 |---|---|---|---|
 | <img src="media/09-signature-remembered.png" width="200"> | <img src="media/10-save-draft-on-leave.png" width="200"> | <img src="media/11-listen-reading-aloud.png" width="200"> | <img src="media/12-read-aloud-follow-along.png" width="200"> |
 
-| Borrador recuperado tras cerrar la app (iOS) |
-|---|
-| <img src="media/13-draft-restored.png" width="200"> |
+| Borrador recuperado tras cerrar la app (iOS) | Modo oscuro (iOS) | En español (iOS) |
+|---|---|---|
+| <img src="media/13-draft-restored.png" width="200"> | <img src="media/14-dark-mode-reading.png" width="200"> | <img src="media/15-spanish-form.png" width="200"> |
 
 ### Verificación en producción
 Publiqué un artículo real desde la app. El documento `articles/VjV1yr3rUSC8zMzMouvG` tiene
@@ -160,6 +160,16 @@ devolvieron `403`.
   exactamente cuál suena en Android y en iOS sin depender de los eventos de progreso de cada
   motor de voz, que no se comportan igual. Verificado en el simulador de iPhone.
 - **Tiempo de lectura** estimado ("4 min read", a 200 palabras por minuto) junto a la firma.
+- **Modo oscuro**: la app sigue el ajuste del teléfono y cambia al instante. El tema claro no
+  cambia; el oscuro usa la misma paleta de Material 3. Los colores fijos (`Colors.black`) del
+  código heredado pasaron a salir del tema, y el resaltado de la lectura mantiene el texto oscuro
+  para leerse igual de bien en los dos modos.
+- **En inglés y español**: todos los textos de la app, incluidos los errores del formulario, los
+  avisos y las etiquetas de accesibilidad, salen de archivos ARB con `gen-l10n`, el sistema
+  oficial de Flutter. Las fechas y los números se escriben como en cada idioma ("28 sept 2026",
+  "10.000 caracteres"). Un test falla si falta una traducción, y el test de integración fija el
+  inglés para funcionar en teléfonos de cualquier idioma. Los artículos no se traducen: se
+  muestran en el idioma en que se escribieron.
 - **Privacidad de las fotos**: antes de subir una imagen se eliminan su ubicación GPS, la cámara
   y las fechas (EXIF, XMP, IPTC), conservando solo la orientación.
 - **iOS**: la app funciona en iPhone (probada en el simulador), incluido el test de integración
@@ -179,7 +189,7 @@ devolvieron `403`.
 - **Modo emulador** en la app y **script de seed** que publica pasando por las reglas.
 
 ### 6.2 Calidad y *Boy Scout rule* (CG1)
-- **Tests**: 236 unitarios y de widgets (entidades, use cases, modelo, data sources con Firebase
+- **Tests**: 245 unitarios y de widgets (entidades, use cases, modelo, data sources con Firebase
   simulado, repositorios, cubits, widgets y pantalla completa), 66 de reglas y 1 de integración
   de extremo a extremo (CG 4.2). La mayoría del dominio se escribió primero el test (TDD).
 - **CI** en cada push y PR: `flutter analyze` sin ningún aviso, tests, reglas contra el emulador y
@@ -252,7 +262,7 @@ suposiciones, y documentar también los errores y cómo se corrigieron.
 | `publish` devuelve `DataState<void>` | Separación entre órdenes y consultas (CG 3.6): la Home vuelve a pedir la lista. |
 
 ### 7.3 Métricas
-- 43 commits en la rama, uno por paso.
-- `journalist_articles`: 55 archivos y unas 3.000 líneas de Dart. Tests de Dart: unas 3.100 líneas.
+- 46 commits en la rama, uno por paso.
+- `journalist_articles`: 55 archivos y unas 3.050 líneas de Dart. Tests de Dart: unas 3.200 líneas. Textos: 55 en inglés y en español.
 - Reglas: 114 líneas, cubiertas por unas 400 líneas de tests.
 - CI completo: unos 8 minutos, de los que el job de Android es el más lento.
