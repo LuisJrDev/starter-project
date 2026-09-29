@@ -6,11 +6,11 @@ Cloud Storage) y aparece para todos en la pestaña *Community* de la app.
 
 | | |
 |---|---|
-| Rama | `feature/publish-article` (49 commits, uno por paso) |
+| Rama | `feature/publish-article` (53 commits, uno por paso) |
 | Backend | [`backend/docs/DB_SCHEMA.md`](../backend/docs/DB_SCHEMA.md), [`firestore.rules`](../backend/firestore.rules), [`storage.rules`](../backend/storage.rules) |
 | Frontend | [`frontend/lib/features/journalist_articles/`](../frontend/lib/features/journalist_articles) |
 | Plataformas | Android e iOS (simulador iPhone 17), modo claro y oscuro, inglés y español |
-| Tests | 293 unitarios y de widgets (44 de accesibilidad), 66 de reglas de seguridad y 1 de integración de extremo a extremo |
+| Tests | 352 unitarios y de widgets (44 de accesibilidad), 66 de reglas de seguridad y 1 de integración de extremo a extremo |
 | CI | [GitHub Actions](../.github/workflows/ci.yml), los tres jobs en verde |
 | Vídeo | [`docs/media/publish-journey.mp4`](./media/publish-journey.mp4) (40 s) |
 
@@ -196,9 +196,12 @@ devolvieron `403`.
 - **Modo emulador** en la app y **script de seed** que publica pasando por las reglas.
 
 ### 6.2 Calidad y *Boy Scout rule* (CG1)
-- **Tests**: 293 unitarios y de widgets (entidades, use cases, modelo, data sources con Firebase
+- **Tests**: 352 unitarios y de widgets (entidades, use cases, modelo, data sources con Firebase
   simulado, repositorios, cubits, widgets, pantalla completa y 44 de accesibilidad), 66 de reglas y 1 de integración
   de extremo a extremo (CG 4.2). La mayoría del dominio se escribió primero el test (TDD).
+  `test/` refleja `lib/` archivo por archivo, como pide `APP_ARCHITECTURE.md`: en
+  `journalist_articles` todos los archivos con lógica tienen su test, y solo quedan sin él las
+  interfaces abstractas de los repositorios.
 - **CI** en cada push y PR: `flutter analyze` sin ningún aviso, tests, reglas contra el emulador y
   el recorrido de publicar en un emulador Android.
 - **Código heredado arreglado**:
@@ -271,7 +274,7 @@ suposiciones, y documentar también los errores y cómo se corrigieron.
 | `PublishArticleCubit` recibe 5 use cases y `PublishArticleUseCase` 3 repositorios | CG 3.5 limita los argumentos de las **funciones** para que sus tests sean simples. Estos son **constructores de inyección de dependencias**: cada argumento es una dependencia que el test sustituye por un mock, y agruparlos en un objeto solo escondería las dependencias. Todas las funciones y métodos tienen 2 argumentos o menos, salvo los dos `errorBuilder` de imágenes, cuya firma de 3 argumentos impone Flutter. |
 
 ### 7.3 Métricas
-- 49 commits en la rama, uno por paso.
-- `journalist_articles`: 55 archivos y unas 3.100 líneas de Dart. Tests de Dart: unas 3.450 líneas. Textos: 56 en inglés y en español.
+- 53 commits en la rama, uno por paso.
+- `journalist_articles`: 55 archivos y unas 3.100 líneas de Dart. Tests de Dart: unas 4.200 líneas. Textos: 56 en inglés y en español.
 - Reglas: 114 líneas, cubiertas por unas 400 líneas de tests.
 - CI completo: unos 8 minutos, de los que el job de Android es el más lento.
