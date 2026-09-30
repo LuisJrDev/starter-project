@@ -6,7 +6,7 @@ Cloud Storage) y aparece para todos en la pestaña *Community* de la app.
 
 | | |
 |---|---|
-| Rama | `feature/publish-article` (58 commits, uno por paso) |
+| Rama | `feature/publish-article` (59 commits, uno por paso) |
 | Backend | [`backend/docs/DB_SCHEMA.md`](../backend/docs/DB_SCHEMA.md), [`firestore.rules`](../backend/firestore.rules), [`storage.rules`](../backend/storage.rules) |
 | Frontend | [`frontend/lib/features/journalist_articles/`](../frontend/lib/features/journalist_articles) |
 | Plataformas | Android e iOS (simulador iPhone 17), modo claro y oscuro, inglés y español |
@@ -291,16 +291,17 @@ autenticación con editar y borrar, App Check y limpieza programada de huérfana
 ## 7. Secciones extra
 
 ### 7.1 Uso de inteligencia artificial
-Desarrollé el proyecto trabajando con **Claude Code** (un asistente de programación con IA) como
-pareja de programación, y quiero contarlo con transparencia.
+Desarrollé el proyecto **en equipo con Claude Code**, un asistente de programación con IA: yo
+diseñaba y decidía, y la IA implementaba. Quiero contarlo con transparencia.
 
-- **Mi papel:** definí el plan y el orden de las fases siguiendo el README, tomé y aprobé cada
-  decisión (esquema, nombres, alcance, qué extras hacer, qué publicar en producción) y revisé
-  cada fase antes de avanzar. También resolví lo que dependía de mi cuenta: el cambio al plan
-  Blaze, el permiso IAM de Storage, la revisión de las claves y el cierre de las alertas de
-  GitHub.
-- **El papel de la IA:** escribió gran parte del código, los tests y la documentación, y verificó
-  cada paso: tests, analyzer, emulador Android, Firebase Emulator Suite, producción y CI.
+- **Mi papel:** llegué con el análisis hecho (el esquema propuesto, los comentarios del Figma, el
+  plan por fases y las reglas de arquitectura) y dirigí el proyecto como responsable técnico y de
+  producto. Decidí el alcance, elegí cada extra y su prioridad, aprobé cada decisión de diseño,
+  revisé y probé cada fase antes de avanzar y resolví todo lo que dependía de mi cuenta: el plan
+  Blaze, el permiso IAM de Storage, la restricción de las claves y las alertas de GitHub.
+- **El papel de la IA:** implementó la mayor parte del código, los tests y la documentación
+  siguiendo mis indicaciones, y verificó cada paso en el emulador Android, el simulador de
+  iPhone, Firebase Emulator Suite, producción y el CI.
 - **Trazabilidad:** todos los commits de la rama llevan la línea `Co-Authored-By: Claude`.
 
 Lo que más me aportó fue la disciplina del proceso: fases pequeñas, verificación real en lugar de
@@ -319,7 +320,7 @@ suposiciones, y documentar también los errores y cómo se corrigieron.
 | `PublishArticleCubit` recibe 5 use cases y `PublishArticleUseCase` 3 repositorios | CG 3.5 limita los argumentos de las **funciones** para que sus tests sean simples. Estos son **constructores de inyección de dependencias**: cada argumento es una dependencia que el test sustituye por un mock, y agruparlos en un objeto solo escondería las dependencias. Todas las funciones y métodos tienen 2 argumentos o menos, salvo los dos `errorBuilder` de imágenes, cuya firma de 3 argumentos impone Flutter. |
 
 ### 7.3 Métricas
-- 58 commits en la rama, uno por paso.
+- 59 commits en la rama, uno por paso.
 - `journalist_articles`: 55 archivos y unas 3.100 líneas de Dart. Tests de Dart: unas 4.200 líneas. Textos: 56 en inglés y en español.
 - Reglas: 114 líneas, cubiertas por unas 400 líneas de tests.
 - CI completo: unos 8 minutos, de los que el job de Android es el más lento.
